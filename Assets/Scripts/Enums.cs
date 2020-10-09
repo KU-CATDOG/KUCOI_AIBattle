@@ -1,0 +1,1 @@
+﻿public enum MapInfo { None, Treasure, Exit }
