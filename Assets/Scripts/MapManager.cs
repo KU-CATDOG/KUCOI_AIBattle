@@ -10,11 +10,12 @@ public class MapManager : MonoBehaviour
     [SerializeField]
     private Tilemap tileMap;
     [SerializeField]
-    private GameObject policeTile, thiefTile;
+    private GameObject policeTile, thiefTile, treasure2Tile, treasure3Tile, treasure5Tile;
 
     private ThiefInfo[] thieves = new ThiefInfo[4];
     private PoliceInfo[] polices = new PoliceInfo[6];
-    private TreasureInfo[] treasures = new TreasureInfo[7];
+
+    private Dictionary<Vector2, TreasureInfo> treasures = new Dictionary<Vector2, TreasureInfo>();
 
     public TileType GetTileCode(string tileName)
     {
@@ -55,32 +56,35 @@ public class MapManager : MonoBehaviour
         else return Vector2.zero;
     }
 
-    private int ThievesOnPos(Vector2 mapPos)
+    public void InitiateMap()
     {
-        int count = 0;
-
-        for (int i = 0; i < thieves.Length; i++)
+        map = new TileType[tileMap.size.x, tileMap.size.y];
+        for (int x = 0; x < tileMap.size.x; x++)
         {
-            if (thieves[i] != null && thieves[i].mapPos == mapPos)
+            for (int y = 0; y < tileMap.size.y; y++)
             {
-                count++;
+                map[x, y] = GetTileCode(tileMap.GetTile(new Vector3Int(x - tileMap.size.x / 2, y - tileMap.size.y / 2, 0)).name);
             }
         }
-        return count;
     }
 
-    private int PolicesOnPos(Vector2 mapPos)
+    private bool PolicesOnPos(Vector2 mapPos)
     {
-        int count = 0;
-
         for (int i = 0; i < polices.Length; i++)
         {
             if (polices[i].mapPos == mapPos)
             {
-                count++;
+                return true;
             }
         }
-        return count;
+        return false;
+    }
+
+    private bool IsTreasureNear(Vector2 mapPos)
+    {
+        return map[(int)mapPos.x + 1, (int)mapPos.y] == TileType.Treasure || map[(int)mapPos.x + 1, (int)mapPos.y + 1] == TileType.Treasure || map[(int)mapPos.x, (int)mapPos.y + 1] == TileType.Treasure ||
+            map[(int)mapPos.x - 1, (int)mapPos.y + 1] == TileType.Treasure || map[(int)mapPos.x - 1, (int)mapPos.y] == TileType.Treasure || map[(int)mapPos.x - 1, (int)mapPos.y - 1] == TileType.Treasure ||
+            map[(int)mapPos.x, (int)mapPos.y - 1] == TileType.Treasure || map[(int)mapPos.x + 1, (int)mapPos.y - 1] == TileType.Treasure;
     }
 
     public void MoveAgents(MoveInfo[] policeMoves, MoveInfo[] thiefMoves)
@@ -90,7 +94,7 @@ public class MapManager : MonoBehaviour
         {
             Vector2 afterMovePos = polices[i].mapPos + MoveDirToVector2(policeMoves[i].moveDir);
 
-            if(map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Exit)
+            if(map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Exit && !IsTreasureNear(afterMovePos))
             {
                 polices[i].mapPos = afterMovePos;
                 polices[i].angle = policeMoves[i].moveAngle;
@@ -117,16 +121,55 @@ public class MapManager : MonoBehaviour
             }
         }
 
+        //Check if thief was caught
+        for(int i = 0; i < thieves.Length; i++)
+        {
+            if(thieves[i] != null)
+            {
+                if (map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] != TileType.Exit &&
+                    (PolicesOnPos(thieves[i].mapPos + Vector2.up) || PolicesOnPos(thieves[i].mapPos + Vector2.down) || PolicesOnPos(thieves[i].mapPos + Vector2.left) || PolicesOnPos(thieves[i].mapPos + Vector2.right)))
+                {
+                    Destroy(thieves[i].tileObject.gameObject);
+                    thieves[i] = null;
+
+                    Debug.Log("Thief was caught");
+                }
+            }
+        }
+
+        //Check if thief get treasure
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            if (thieves[i] != null)
+            {
+                if(map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] == TileType.Treasure)
+                {
+                    thieves[i].value += treasures[thieves[i].mapPos].value;
+                    map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] = TileType.Empty;
+                    Destroy(treasures[thieves[i].mapPos].tileObject);
+                    treasures.Remove(thieves[i].mapPos);
+                }
+            }
+        }
+
+        //Check if thief return exit area with treasure
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            if (thieves[i] != null)
+            {
+                if (map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] == TileType.Exit)
+                {
+                    GameManager.inst.AddThiefScore(thieves[i].value);
+                    thieves[i].value = 0;
+                }
+            }
+        }
 
         //Update real position
         for (int i = 0; i < polices.Length; i++)
         {
             polices[i].tileObject.transform.position = OnBoardPos(polices[i].mapPos);
             polices[i].tileObject.transform.rotation = Quaternion.Euler(0, 0, polices[i].angle);
-            if (PolicesOnPos(polices[i].mapPos) != 1)
-            {
-
-            }
         }
         for (int i = 0; i < thieves.Length; i++)
         {
@@ -146,7 +189,7 @@ public class MapManager : MonoBehaviour
         for (int i = 0; i < 6; i++)
         {
             Vector2 policePos = initialPolices[i].mapPos;
-            if (policePos.x == 0 || policePos.y == 0 || policePos.x == tileMap.size.x - 1 || policePos.y == tileMap.size.y - 1)
+            if (policePos.x <= 0 || policePos.y <= 0 || policePos.x >= tileMap.size.x - 1 || policePos.y >= tileMap.size.y - 1 || map[(int)policePos.x, (int)policePos.y] == TileType.Wall)
             {
                 Debug.Log("Illegal police position at " + policePos);
             }
@@ -158,38 +201,77 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    public void InitiateTreasure()
+    {
+        Vector2[] initialTreasures = Police.inst.InitialTreasurePos();
+        
+        for(int i = 0; i < 7; i++)
+        {
+            Vector2 treasurePos = initialTreasures[i];
+            if (treasurePos.x == 0 || treasurePos.y == 0 || treasurePos.x == tileMap.size.x - 1 || treasurePos.y == tileMap.size.y - 1 || map[(int)treasurePos.x, (int)treasurePos.y] == TileType.Wall)
+            {
+                Debug.Log("Illegal treasure position at " + treasurePos);
+            }
+            else
+            {
+                bool isPoliceNear = false;
+                for(int j = 0; j < polices.Length; j++)
+                {
+                    Vector2 dist = polices[j].mapPos - treasurePos;
+                    if(Mathf.Abs(dist.x) <= 1 && Mathf.Abs(dist.y) <= 1)
+                    {
+                        Debug.Log("Illegal treasure position at " + treasurePos);
+                        isPoliceNear = true;
+                        break;
+                    }
+                }
+                if(!isPoliceNear)
+                {
+                    TreasureInfo newTreasureInfo = new TreasureInfo();
+                    newTreasureInfo.mapPos = treasurePos;
+                    newTreasureInfo.value = i <= 2 ? 2 : (i <= 5 ? 3 : 5);
+                    newTreasureInfo.tileObject = Instantiate(i <= 2 ? treasure2Tile : (i <= 5 ? treasure3Tile : treasure5Tile), OnBoardPos(treasurePos), Quaternion.identity);
+                    treasures.Add(treasurePos, newTreasureInfo);
+
+                    map[(int)treasurePos.x, (int)treasurePos.y] = TileType.Treasure;
+                }
+
+            }
+        }
+    }
+
     private void GetPoliceSight()
     {
-        SightType[,] sightInfos = new SightType[tileMap.size.x, tileMap.size.y];
-        for (int x = 0; x < tileMap.size.x; x++)
-        {
-            for (int y = 0; y < tileMap.size.y; y++)
-            {
-                sightInfos[x, y] = SightType.Invisible;
-            }
-        }
+        //SightType[,] sightInfos = new SightType[tileMap.size.x, tileMap.size.y];
+        //for (int x = 0; x < tileMap.size.x; x++)
+        //{
+        //    for (int y = 0; y < tileMap.size.y; y++)
+        //    {
+        //        sightInfos[x, y] = SightType.Invisible;
+        //    }
+        //}
 
-        for (int i = 0; i < 1; i++)
-        {
-            Vector2 policePos = polices[i].mapPos;
-            int sin = (int)Mathf.Sin(polices[i].angle * Mathf.Deg2Rad);
-            int cos = (int)Mathf.Cos(polices[i].angle * Mathf.Deg2Rad);
+        //for (int i = 0; i < 1; i++)
+        //{
+        //    Vector2 policePos = polices[i].mapPos;
+        //    int sin = (int)Mathf.Sin(polices[i].angle * Mathf.Deg2Rad);
+        //    int cos = (int)Mathf.Cos(polices[i].angle * Mathf.Deg2Rad);
 
-            sightInfos[(int)policePos.x, (int)policePos.y] = MapToSight(map[(int)policePos.x, (int)policePos.y]);
+        //    sightInfos[(int)policePos.x, (int)policePos.y] = MapToSight(map[(int)policePos.x, (int)policePos.y]);
 
 
-            for(int x = 0; x < 3; x++)
-            {
-                for(int y = -1; y < 2; y++)
-                {
-                    int realX = cos * x - sin * y + cos + (int)policePos.x;
-                    int realY = sin * x + cos * y + sin + (int)policePos.y;
+        //    for(int x = 0; x < 3; x++)
+        //    {
+        //        for(int y = -1; y < 2; y++)
+        //        {
+        //            int realX = cos * x - sin * y + cos + (int)policePos.x;
+        //            int realY = sin * x + cos * y + sin + (int)policePos.y;
 
-                    Debug.Log(realX + "," + realY);
+        //            Debug.Log(realX + "," + realY);
 
-                }
-            }
-        }
+        //        }
+        //    }
+        //}
     }
 
     #endregion
@@ -223,14 +305,6 @@ public class MapManager : MonoBehaviour
 
     private void Start()
     {
-        map = new TileType[tileMap.size.x, tileMap.size.y];
-        for (int x = 0; x < tileMap.size.x; x++)
-        {
-            for (int y = 0; y < tileMap.size.y; y++)
-            {
-                map[x, y] = GetTileCode(tileMap.GetTile(new Vector3Int(x - tileMap.size.x / 2, y - tileMap.size.y / 2, 0)).name);
-            }
-        }
     }
 
     private void Update()

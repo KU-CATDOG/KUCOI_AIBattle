@@ -4,11 +4,17 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class GameManager : MonoBehaviour
+public class GameManager : SingletonBehaviour<GameManager>
 {
     [SerializeField]
     private MapManager mapManager;
+    [SerializeField]
+    private int thiefScore = 0;
 
+    public void AddThiefScore(int score)
+    {
+        thiefScore += score;
+    }
 
     private void MoveAgents()
     {
@@ -28,7 +34,9 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        mapManager.InitiateMap();
         mapManager.InitiatePolice();
+        mapManager.InitiateTreasure();
         mapManager.InitiateThief();
     }
 

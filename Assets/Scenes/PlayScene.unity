@@ -2713,7 +2713,7 @@ GameObject:
   - component: {fileID: 2108345931}
   - component: {fileID: 2108345933}
   m_Layer: 0
-  m_Name: Grid
+  m_Name: Map
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2762,4 +2762,10 @@ MonoBehaviour:
   policeTile: {fileID: 3326702446439519223, guid: 00bc3529b64588245978ade7d83d64e5,
     type: 3}
   thiefTile: {fileID: 6989395071610915348, guid: 5cd8c1b02cfd33a4ba355eed286af35c,
+    type: 3}
+  treasure2Tile: {fileID: 656682461190696462, guid: 907a420c6f0ea1840b4a5ece904ff375,
+    type: 3}
+  treasure3Tile: {fileID: 7723149725187240661, guid: c63bd5381e9d2634d9d9a96385178c62,
+    type: 3}
+  treasure5Tile: {fileID: 5135569931564674791, guid: 90f16b188767d2947b7ea177eec968a4,
     type: 3}

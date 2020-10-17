@@ -11,7 +11,17 @@ public class Police : SingletonBehaviour<Police>
         //0번, 1번, 2번은 2점짜리 보물의 위치
         //3번, 4번, 5번은 3점짜리 보물의 위치
         //6번은 5점짜리 보물의 위치
-        return null;
+
+        Vector2[] pos = new Vector2[7];
+
+        pos[0] = new Vector2(1, 14);
+        pos[1] = new Vector2(2, 14);
+        pos[2] = new Vector2(3, 14);
+        pos[3] = new Vector2(4, 14);
+        pos[4] = new Vector2(5, 14);
+        pos[5] = new Vector2(6, 14);
+        pos[6] = new Vector2(7, 14);
+        return pos;
     }
 
     public PoliceInfo[] InitialPolicePos()
