@@ -15,6 +15,8 @@ public class MapManager : MonoBehaviour
     private ThiefInfo[] thieves = new ThiefInfo[4];
     private PoliceInfo[] polices = new PoliceInfo[6];
 
+    private int thiefCount;
+
     private Dictionary<Vector2, TreasureInfo> treasures = new Dictionary<Vector2, TreasureInfo>();
 
     public TileType GetTileCode(string tileName)
@@ -126,11 +128,12 @@ public class MapManager : MonoBehaviour
         {
             if(thieves[i] != null)
             {
-                if (map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] != TileType.Exit &&
-                    (PolicesOnPos(thieves[i].mapPos + Vector2.up) || PolicesOnPos(thieves[i].mapPos + Vector2.down) || PolicesOnPos(thieves[i].mapPos + Vector2.left) || PolicesOnPos(thieves[i].mapPos + Vector2.right)))
+                if (map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] != TileType.Exit && (PolicesOnPos(thieves[i].mapPos + Vector2.up) || PolicesOnPos(thieves[i].mapPos + Vector2.down)
+                    || PolicesOnPos(thieves[i].mapPos + Vector2.left) || PolicesOnPos(thieves[i].mapPos + Vector2.right) || PolicesOnPos(thieves[i].mapPos)))
                 {
                     Destroy(thieves[i].tileObject.gameObject);
                     thieves[i] = null;
+                    thiefCount--;
 
                     Debug.Log("Thief was caught");
                 }
@@ -178,6 +181,12 @@ public class MapManager : MonoBehaviour
                 thieves[i].tileObject.transform.position = OnBoardPos(thieves[i].mapPos);
             }
         }
+
+        //If there is no thief, game over
+        if (thiefCount == 0 || treasures.Count == 0)
+        {
+            GameManager.inst.GameEnd();
+        }
     }
 
 
@@ -186,7 +195,7 @@ public class MapManager : MonoBehaviour
     public void InitiatePolice()
     {
         PoliceInfo[] initialPolices = Police.inst.InitialPolicePos();
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < polices.Length; i++)
         {
             Vector2 policePos = initialPolices[i].mapPos;
             if (policePos.x <= 0 || policePos.y <= 0 || policePos.x >= tileMap.size.x - 1 || policePos.y >= tileMap.size.y - 1 || map[(int)policePos.x, (int)policePos.y] == TileType.Wall)
@@ -281,7 +290,7 @@ public class MapManager : MonoBehaviour
     public void InitiateThief()
     {
         ThiefInfo[] initialThieves = Thief.inst.InitialThiefPos();
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < thieves.Length; i++)
         {
             Vector2 thiefPos = initialThieves[i].mapPos;
             if (thiefPos.x != 0 && thiefPos.y != 0 && thiefPos.x != tileMap.size.x - 1 && thiefPos.y != tileMap.size.y - 1)
@@ -294,6 +303,8 @@ public class MapManager : MonoBehaviour
                 thieves[i].tileObject = Instantiate(thiefTile, OnBoardPos(thiefPos), Quaternion.identity);
             }
         }
+
+        thiefCount = thieves.Length;
     }
 
     private void GetThiefSight(int index)

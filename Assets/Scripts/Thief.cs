@@ -15,10 +15,10 @@ public class Thief : SingletonBehaviour<Thief>
             pos[i] = new ThiefInfo();
         }
 
-        pos[0].mapPos = new Vector2(0, 0);
-        pos[1].mapPos = new Vector2(0, 1);
+        pos[0].mapPos = new Vector2(0, 1);
+        pos[1].mapPos = new Vector2(0, 2);
         pos[2].mapPos = new Vector2(0, 3);
-        pos[3].mapPos = new Vector2(0, 14);
+        pos[3].mapPos = new Vector2(1, 15);
 
         pos[0].value = 0;
         pos[1].value = 0;
@@ -27,7 +27,6 @@ public class Thief : SingletonBehaviour<Thief>
 
         return pos;
     }
-    int i = 0;
 
     public MoveInfo[] NextThiefPos()
     {
@@ -39,16 +38,10 @@ public class Thief : SingletonBehaviour<Thief>
 
 
         //ForTest
-        pos[0].moveDir = MoveDir.Up;
-        pos[1].moveDir = MoveDir.Up;
-        pos[2].moveDir = MoveDir.Neutral;
-        if (i % 3 == 0)
-            pos[3].moveDir = MoveDir.Right;
-        else if(i % 3 == 1)
-            pos[3].moveDir = MoveDir.Up;
-        else if (i % 3 == 2)
-            pos[3].moveDir = MoveDir.Down;
-        i++;
+        pos[0].moveDir = MoveDir.Right;
+        pos[1].moveDir = MoveDir.Right;
+        pos[2].moveDir = MoveDir.Right;
+        pos[3].moveDir = MoveDir.Down;
         //ForTest
 
 

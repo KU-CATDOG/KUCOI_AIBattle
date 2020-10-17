@@ -11,6 +11,9 @@ public class GameManager : SingletonBehaviour<GameManager>
     [SerializeField]
     private int thiefScore = 0;
 
+    private bool isGameEnded = false;
+    private int turnCount = 0;
+
     public void AddThiefScore(int score)
     {
         thiefScore += score;
@@ -19,6 +22,12 @@ public class GameManager : SingletonBehaviour<GameManager>
     private void MoveAgents()
     {
         mapManager.MoveAgents(Police.inst.NextPolicePos(), Thief.inst.NextThiefPos());
+    }
+
+    public void GameEnd()
+    {
+        isGameEnded = true;
+        Debug.Log("Game end");
     }
 
     private void MoveThief()
@@ -43,9 +52,17 @@ public class GameManager : SingletonBehaviour<GameManager>
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.A))
+        if(!isGameEnded)
         {
-            MoveAgents();
+            if (turnCount == 50)
+            {
+                GameEnd();
+            }
+            else if (Input.GetKeyDown(KeyCode.A))
+            {
+                MoveAgents();
+                turnCount++;
+            }
         }
     }
 }
