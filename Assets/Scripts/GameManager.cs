@@ -9,6 +9,22 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private MapManager mapManager;
 
+
+    private void MoveAgents()
+    {
+        mapManager.MoveAgents(Police.inst.NextPolicePos(), Thief.inst.NextThiefPos());
+    }
+
+    private void MoveThief()
+    {
+
+    }
+
+    private void MovePolice()
+    {
+
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -19,6 +35,9 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if(Input.GetKeyDown(KeyCode.A))
+        {
+            MoveAgents();
+        }
     }
 }

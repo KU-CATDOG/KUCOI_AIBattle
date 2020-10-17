@@ -19,12 +19,10 @@ public class Police : SingletonBehaviour<Police>
         //경찰의 초기 위치를 설정하여 반환
         //반환되는 배열의 크기는 6이어야 하며, 배열의 크기가 6보다 큰 경우 첫 6번째 값까지만 사용됨
         PoliceInfo[] pos = new PoliceInfo[6];
-        pos[0] = new PoliceInfo();
-        pos[1] = new PoliceInfo();
-        pos[2] = new PoliceInfo();
-        pos[3] = new PoliceInfo();
-        pos[4] = new PoliceInfo();
-        pos[5] = new PoliceInfo();
+        for (int i = 0; i < 6; i++)
+        {
+            pos[i] = new PoliceInfo();
+        }
 
         pos[0].mapPos = new Vector2(1, 1);
         pos[1].mapPos = new Vector2(2, 2);
@@ -39,6 +37,36 @@ public class Police : SingletonBehaviour<Police>
         pos[3].angle = 270;
         pos[4].angle = 0;
         pos[5].angle = 90;
+
+        return pos;
+    }
+
+    public MoveInfo[] NextPolicePos()
+    {
+        MoveInfo[] pos = new MoveInfo[6];
+        for(int i = 0; i < 6; i++)
+        {
+            pos[i] = new MoveInfo();
+        }
+
+
+        //ForTest
+        pos[0].moveDir = MoveDir.Up;
+        pos[1].moveDir = MoveDir.Up;
+        pos[2].moveDir = MoveDir.Up;
+        pos[3].moveDir = MoveDir.Up;
+        pos[4].moveDir = MoveDir.Up;
+        pos[5].moveDir = MoveDir.Up;
+
+        pos[0].moveAngle = 270;
+        pos[1].moveAngle = 180;
+        pos[2].moveAngle = 90;
+        pos[3].moveAngle = 0;
+        pos[4].moveAngle = 270;
+        pos[5].moveAngle = 180;
+        //ForTest
+
+
 
         return pos;
     }

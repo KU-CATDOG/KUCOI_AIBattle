@@ -46,6 +46,98 @@ public class MapManager : MonoBehaviour
         return sightType;
     }
 
+    private Vector2 MoveDirToVector2(MoveDir moveDir)
+    {
+        if (moveDir == MoveDir.Up) return Vector2.up;
+        else if (moveDir == MoveDir.Down) return Vector2.down;
+        else if (moveDir == MoveDir.Left) return Vector2.left;
+        else if (moveDir == MoveDir.Right) return Vector2.right;
+        else return Vector2.zero;
+    }
+
+    private int ThievesOnPos(Vector2 mapPos)
+    {
+        int count = 0;
+
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            if (thieves[i] != null && thieves[i].mapPos == mapPos)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int PolicesOnPos(Vector2 mapPos)
+    {
+        int count = 0;
+
+        for (int i = 0; i < polices.Length; i++)
+        {
+            if (polices[i].mapPos == mapPos)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public void MoveAgents(MoveInfo[] policeMoves, MoveInfo[] thiefMoves)
+    {
+        //Update virtual position
+        for (int i = 0; i < polices.Length; i++)
+        {
+            Vector2 afterMovePos = polices[i].mapPos + MoveDirToVector2(policeMoves[i].moveDir);
+
+            if(map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Exit)
+            {
+                polices[i].mapPos = afterMovePos;
+                polices[i].angle = policeMoves[i].moveAngle;
+            }
+            else
+            {
+                policeMoves[i].moveDir = MoveDir.Neutral;
+            }
+        }
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            if (thieves[i] != null)
+            {
+                Vector2 afterMovePos = thieves[i].mapPos + MoveDirToVector2(thiefMoves[i].moveDir);
+
+                if(afterMovePos.x >= 0 && afterMovePos.x <= tileMap.size.x - 1 && afterMovePos.y >= 0 && afterMovePos.y <= tileMap.size.y - 1 && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall)
+                {
+                    thieves[i].mapPos = afterMovePos;
+                }
+                else
+                {
+                    thiefMoves[i].moveDir = MoveDir.Neutral;
+                }
+            }
+        }
+
+
+        //Update real position
+        for (int i = 0; i < polices.Length; i++)
+        {
+            polices[i].tileObject.transform.position = OnBoardPos(polices[i].mapPos);
+            polices[i].tileObject.transform.rotation = Quaternion.Euler(0, 0, polices[i].angle);
+            if (PolicesOnPos(polices[i].mapPos) != 1)
+            {
+
+            }
+        }
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            if(thieves[i] != null)
+            {
+                thieves[i].tileObject.transform.position = OnBoardPos(thieves[i].mapPos);
+            }
+        }
+    }
+
+
     #region Police
 
     public void InitiatePolice()
@@ -143,11 +235,14 @@ public class MapManager : MonoBehaviour
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.A))
-        {
-            GetPoliceSight();
-        }
+
     }
+}
+
+public class MoveInfo
+{
+    public MoveDir moveDir;
+    public float moveAngle;
 }
 
 public class TileInfo : ScriptableObject
