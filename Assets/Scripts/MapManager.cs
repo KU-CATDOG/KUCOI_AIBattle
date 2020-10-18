@@ -189,12 +189,39 @@ public class MapManager : MonoBehaviour
         }
     }
 
+    public void ClearGame()
+    {
+        for (int i = 0; i < polices.Length; i++)
+        {
+            Destroy(polices[i].tileObject.gameObject);
+            polices[i] = null;
+        }
+        Debug.Log(treasures.Count);
+        if(treasures.Count != 0)
+        {
+            TreasureInfo[] remainings = new TreasureInfo[treasures.Count];
+            treasures.Values.CopyTo(remainings, 0);
+            for (int i = 0; i < treasures.Count; i++)
+            {
+                Destroy(remainings[i].tileObject);
+            }
+        }
+        treasures.Clear();
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            if(thieves[i] != null)
+            {
+                Destroy(thieves[i].tileObject.gameObject);
+                thieves[i] = null;
+            }
+        }
+    }
 
     #region Police
 
     public void InitiatePolice()
     {
-        PoliceInfo[] initialPolices = Police.inst.InitialPolicePos();
+        PoliceInfo[] initialPolices = GameManager.inst.InitiatePolicePos();
         for (int i = 0; i < polices.Length; i++)
         {
             Vector2 policePos = initialPolices[i].mapPos;
@@ -212,7 +239,7 @@ public class MapManager : MonoBehaviour
 
     public void InitiateTreasure()
     {
-        Vector2[] initialTreasures = Police.inst.InitialTreasurePos();
+        Vector2[] initialTreasures = GameManager.inst.InitiateTreasurePos();
         
         for(int i = 0; i < 7; i++)
         {
@@ -289,7 +316,7 @@ public class MapManager : MonoBehaviour
 
     public void InitiateThief()
     {
-        ThiefInfo[] initialThieves = Thief.inst.InitialThiefPos();
+        ThiefInfo[] initialThieves = GameManager.inst.InitiateThiefPos();
         for (int i = 0; i < thieves.Length; i++)
         {
             Vector2 thiefPos = initialThieves[i].mapPos;
