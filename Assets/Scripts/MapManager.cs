@@ -168,17 +168,55 @@ public class MapManager : MonoBehaviour
             }
         }
 
-        //Update real position
+
+
+        Dictionary<Vector2, List<int>> dupPolicePos = new Dictionary<Vector2, List<int>>();
+
         for (int i = 0; i < polices.Length; i++)
         {
-            polices[i].tileObject.transform.position = OnBoardPos(polices[i].mapPos);
-            polices[i].tileObject.transform.rotation = Quaternion.Euler(0, 0, polices[i].angle);
+            if(!dupPolicePos.ContainsKey(polices[i].mapPos))
+            {
+                List<int> indexList = new List<int>();
+                dupPolicePos.Add(polices[i].mapPos, indexList);
+            }
+            dupPolicePos[polices[i].mapPos].Add(i);
         }
+
+        Dictionary<Vector2, List<int>> dupThiefPos = new Dictionary<Vector2, List<int>>();
+
         for (int i = 0; i < thieves.Length; i++)
         {
-            if(thieves[i] != null)
+            if (thieves[i] != null)
             {
-                thieves[i].tileObject.transform.position = OnBoardPos(thieves[i].mapPos);
+                if (!dupThiefPos.ContainsKey(thieves[i].mapPos))
+                {
+                    List<int> indexList = new List<int>();
+                    dupThiefPos.Add(thieves[i].mapPos, indexList);
+                }
+                dupThiefPos[thieves[i].mapPos].Add(i);
+            }
+        }
+
+        //Update real position
+        foreach (var child in dupPolicePos)
+        {
+            int dupPoliceCount = child.Value.Count;
+            for(int i = 0; i < dupPoliceCount; i++)
+            {
+                polices[child.Value[i]].tileObject.transform.position = OnBoardPos(polices[child.Value[i]].mapPos) + new Vector2(-0.5f + (float)(i + 1) / (dupPoliceCount + 1), 0);
+                polices[child.Value[i]].tileObject.transform.rotation = Quaternion.Euler(0, 0, polices[child.Value[i]].angle);
+            }
+        }
+
+        foreach (var child in dupThiefPos)
+        {
+            int dupThiefCount = child.Value.Count;
+            for (int i = 0; i < dupThiefCount; i++)
+            {
+                if(thieves[child.Value[i]] != null)
+                {
+                    thieves[child.Value[i]].tileObject.transform.position = OnBoardPos(thieves[child.Value[i]].mapPos) + new Vector2(-0.5f + (float)(i + 1) / (dupThiefCount + 1), 0);
+                }
             }
         }
 

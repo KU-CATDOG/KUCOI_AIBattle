@@ -2755,8 +2755,6 @@ MonoBehaviour:
   turnText: {fileID: 1427795338}
   mapManager: {fileID: 2108345933}
   thiefScore: 0
-  policeAI: {fileID: 0}
-  thiefAI: {fileID: 0}
 --- !u!4 &793531675
 Transform:
   m_ObjectHideFlags: 0

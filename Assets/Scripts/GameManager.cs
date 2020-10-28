@@ -20,6 +20,7 @@ public class GameManager : SingletonBehaviour<GameManager>
 
     private bool isGameEnded = false;
     private int turnCount = 0;
+    private int maxTurn = 50;
 
     private Police policeAI;
     private Thief thiefAI;
@@ -152,7 +153,7 @@ public class GameManager : SingletonBehaviour<GameManager>
 
         else if (isGameStarted && !isGameEnded)
         {
-            if (turnCount == 2)
+            if (turnCount == maxTurn)
             {
                 GameEnd();
             }

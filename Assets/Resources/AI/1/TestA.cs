@@ -68,12 +68,12 @@ namespace TestA
                 pos[i] = new PoliceInfo();
             }
 
-            pos[0].mapPos = new Vector2(1, 1);
-            pos[1].mapPos = new Vector2(2, 2);
+            pos[0].mapPos = new Vector2(3, 1);
+            pos[1].mapPos = new Vector2(3, 2);
             pos[2].mapPos = new Vector2(3, 3);
-            pos[3].mapPos = new Vector2(4, 4);
-            pos[4].mapPos = new Vector2(5, 5);
-            pos[5].mapPos = new Vector2(6, 6);
+            pos[3].mapPos = new Vector2(3, 4);
+            pos[4].mapPos = new Vector2(3, 5);
+            pos[5].mapPos = new Vector2(3, 6);
 
             pos[0].angle = 0;
             pos[1].angle = 90;
