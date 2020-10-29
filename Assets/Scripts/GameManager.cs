@@ -50,6 +50,9 @@ public class GameManager : SingletonBehaviour<GameManager>
 
     private bool isGameStarted = false;
 
+    private SightInfo[,] precalcPoliceSight, precalcThiefSight;
+    private TileType[,] baseMap;
+
     public void AddThiefScore(List<int> treasures)
     {
         for(int i = 0; i < treasures.Count; i++)
@@ -62,6 +65,7 @@ public class GameManager : SingletonBehaviour<GameManager>
     private IEnumerator InitiateAgents()
     {
         int policeErrorCount = 0, thiefErrorCount = 0;
+        baseMap = mapManager.baseMapGetter;
         while(policeErrorCount < 3 && thiefErrorCount < 3)
         {
             policeThread = new Thread(new ThreadStart(InitiatePolicePos));
@@ -123,6 +127,8 @@ public class GameManager : SingletonBehaviour<GameManager>
         isMoveEnded = false;
         nextPoliceMove = nextThiefMove = null;
 
+        precalcPoliceSight = mapManager.GetPoliceSight();
+        precalcThiefSight = mapManager.GetThiefSight();
         policeThread = new Thread(new ThreadStart(MovePolice));
         thiefThread = new Thread(new ThreadStart(MoveThief));
 
@@ -200,23 +206,23 @@ public class GameManager : SingletonBehaviour<GameManager>
 
     public void InitiatePolicePos()
     {
-        initialPolices = policeAI.InitialPolicePos();
-        initialTreasures = policeAI.InitialTreasurePos();
+        initialPolices = policeAI.InitialPolicePos((TileType[,])baseMap.Clone());
+        initialTreasures = policeAI.InitialTreasurePos((TileType[,])baseMap.Clone());
     }
 
     public void InitiateThiefPos()
     {
-        initialThieves = thiefAI.InitialThiefPos();
+        initialThieves = thiefAI.InitialThiefPos((TileType[,])baseMap.Clone());
     }
 
     private void MovePolice()
     {
-        nextPoliceMove = policeAI.NextPolicePos();
+        nextPoliceMove = policeAI.NextPolicePos(precalcPoliceSight);
     }
 
     private void MoveThief()
     {
-        nextThiefMove = thiefAI.NextThiefPos();
+        nextThiefMove = thiefAI.NextThiefPos(precalcThiefSight);
     }
 
     public void StartGame()

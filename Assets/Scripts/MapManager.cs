@@ -27,6 +27,8 @@ public class MapManager : MonoBehaviour
 
     private SightRay policeSightRule;
 
+    public TileType[,] baseMapGetter { get { return (TileType[,])map.Clone(); } }
+
     public TileType GetTileCode(string tileName)
     {
         return (TileType)System.Enum.Parse(typeof(TileType), tileName);
@@ -349,7 +351,7 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    private SightInfo[,] GetPoliceSight()
+    public SightInfo[,] GetPoliceSight()
     {
         if(policeSightRule == null)
         {
@@ -410,7 +412,10 @@ public class MapManager : MonoBehaviour
                 if((int)thief.mapPos.x == nextPos.x && (int)thief.mapPos.y == nextPos.y)
                 {
                     enemy++;
-                    treasure += thief.value;
+                    foreach (int value in thief.treasures)
+                    {
+                        treasure += value;
+                    }
                 }
             }
             if(treasures.TryGetValue(new Vector2(nextPos.x, nextPos.y), out TreasureInfo o))
@@ -450,7 +455,7 @@ public class MapManager : MonoBehaviour
         thiefCount = thieves.Length;
     }
 
-    private SightInfo[,] GetThiefSight()
+    public SightInfo[,] GetThiefSight()
     {
         SightInfo[,] sightInfos = new SightInfo[tileMap.size.x, tileMap.size.y];
         for (int x = 0; x < tileMap.size.x; x++)
