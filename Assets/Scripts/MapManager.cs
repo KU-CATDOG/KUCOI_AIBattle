@@ -13,8 +13,15 @@ public class MapManager : MonoBehaviour
     [SerializeField]
     private GameObject policeTile, thiefTile, treasure2Tile, treasure3Tile, treasure5Tile;
 
+    [SerializeField]
+    private Sprite[] policeSprites;
+
     private ThiefInfo[] thieves = new ThiefInfo[4];
     private PoliceInfo[] polices = new PoliceInfo[6];
+    [SerializeField]
+    private GameObject[] caughtThieves = new GameObject[4];
+
+    private int thiefCount;
 
     private Dictionary<Vector2, TreasureInfo> treasures = new Dictionary<Vector2, TreasureInfo>();
 
@@ -90,14 +97,18 @@ public class MapManager : MonoBehaviour
             map[(int)mapPos.x, (int)mapPos.y - 1] == TileType.Treasure || map[(int)mapPos.x + 1, (int)mapPos.y - 1] == TileType.Treasure;
     }
 
-    public void MoveAgents(MoveInfo[] policeMoves, MoveInfo[] thiefMoves)
+    public IEnumerator MoveAgents(MoveInfo[] policeMoves, MoveInfo[] thiefMoves)
     {
+        bool IsTreasureCaptured = false;
+        bool isThiefCaught = false;
+
         //Update virtual position
         for (int i = 0; i < polices.Length; i++)
         {
             Vector2 afterMovePos = polices[i].mapPos + MoveDirToVector2(policeMoves[i].moveDir);
 
-            if(map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Exit && !IsTreasureNear(afterMovePos))
+            if(policeMoves[i].moveAngle != -1 && 
+                map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Exit && !IsTreasureNear(afterMovePos))
             {
                 polices[i].mapPos = afterMovePos;
                 polices[i].angle = policeMoves[i].moveAngle;
@@ -124,16 +135,80 @@ public class MapManager : MonoBehaviour
             }
         }
 
+
+
+
+
+        Dictionary<Vector2, List<int>> dupPolicePos = new Dictionary<Vector2, List<int>>();
+
+        for (int i = 0; i < polices.Length; i++)
+        {
+            if (!dupPolicePos.ContainsKey(polices[i].mapPos))
+            {
+                List<int> indexList = new List<int>();
+                dupPolicePos.Add(polices[i].mapPos, indexList);
+            }
+            dupPolicePos[polices[i].mapPos].Add(i);
+        }
+
+        Dictionary<Vector2, List<int>> dupThiefPos = new Dictionary<Vector2, List<int>>();
+
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            if (thieves[i] != null)
+            {
+                if (!dupThiefPos.ContainsKey(thieves[i].mapPos))
+                {
+                    List<int> indexList = new List<int>();
+                    dupThiefPos.Add(thieves[i].mapPos, indexList);
+                }
+                dupThiefPos[thieves[i].mapPos].Add(i);
+            }
+        }
+
+        //Update real position
+        foreach (var child in dupPolicePos)
+        {
+            int dupPoliceCount = child.Value.Count;
+            for (int i = 0; i < dupPoliceCount; i++)
+            {
+                polices[child.Value[i]].tileObject.transform.position = OnBoardPos(polices[child.Value[i]].mapPos) + new Vector2(-0.5f + (float)(i + 1) / (dupPoliceCount + 1), 0);
+
+                int spriteIndex = (int)polices[child.Value[i]].angle / 90;
+                polices[child.Value[i]].tileObject.GetComponent<SpriteRenderer>().sprite = policeSprites[spriteIndex];
+            }
+        }
+
+        foreach (var child in dupThiefPos)
+        {
+            int dupThiefCount = child.Value.Count;
+            for (int i = 0; i < dupThiefCount; i++)
+            {
+                if (thieves[child.Value[i]] != null)
+                {
+                    thieves[child.Value[i]].tileObject.transform.position = OnBoardPos(thieves[child.Value[i]].mapPos) + new Vector2(-0.5f + (float)(i + 1) / (dupThiefCount + 1), 0);
+                }
+            }
+        }
+
+
+
+        yield return new WaitForSeconds(1);
+
         //Check if thief was caught
-        for(int i = 0; i < thieves.Length; i++)
+        for (int i = 0; i < thieves.Length; i++)
         {
             if(thieves[i] != null)
             {
-                if (map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] != TileType.Exit &&
-                    (PolicesOnPos(thieves[i].mapPos + Vector2.up) || PolicesOnPos(thieves[i].mapPos + Vector2.down) || PolicesOnPos(thieves[i].mapPos + Vector2.left) || PolicesOnPos(thieves[i].mapPos + Vector2.right)))
+                if (map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] != TileType.Exit && (PolicesOnPos(thieves[i].mapPos + Vector2.up) || PolicesOnPos(thieves[i].mapPos + Vector2.down)
+                    || PolicesOnPos(thieves[i].mapPos + Vector2.left) || PolicesOnPos(thieves[i].mapPos + Vector2.right) || PolicesOnPos(thieves[i].mapPos)))
                 {
                     Destroy(thieves[i].tileObject.gameObject);
                     thieves[i] = null;
+                    thiefCount--;
+
+                    isThiefCaught = true;
+                    caughtThieves[thieves.Length - thiefCount - 1].SetActive(true);
 
                     Debug.Log("Thief was caught");
                 }
@@ -147,10 +222,12 @@ public class MapManager : MonoBehaviour
             {
                 if(map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] == TileType.Treasure)
                 {
-                    thieves[i].value += treasures[thieves[i].mapPos].value;
+                    thieves[i].treasures.Add(treasures[thieves[i].mapPos].value);
                     map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] = TileType.Empty;
                     Destroy(treasures[thieves[i].mapPos].tileObject);
                     treasures.Remove(thieves[i].mapPos);
+
+                    IsTreasureCaptured = true;
                 }
             }
         }
@@ -162,83 +239,112 @@ public class MapManager : MonoBehaviour
             {
                 if (map[(int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y] == TileType.Exit)
                 {
-                    GameManager.inst.AddThiefScore(thieves[i].value);
-                    thieves[i].value = 0;
+                    GameManager.inst.AddThiefScore(thieves[i].treasures);
+                    thieves[i].treasures.Clear();
                 }
             }
         }
 
-        //Update real position
-        for (int i = 0; i < polices.Length; i++)
+
+        //If there is no thief, game over
+        if (thiefCount == 0 || treasures.Count == 0)
         {
-            polices[i].tileObject.transform.position = OnBoardPos(polices[i].mapPos);
-            polices[i].tileObject.transform.rotation = Quaternion.Euler(0, 0, polices[i].angle);
+            GameManager.inst.RoundEnd();
         }
-        for (int i = 0; i < thieves.Length; i++)
+        else
         {
-            if(thieves[i] != null)
+            if(isThiefCaught)
             {
-                thieves[i].tileObject.transform.position = OnBoardPos(thieves[i].mapPos);
+                yield return StartCoroutine(GameManager.inst.CatchThiefRoutine());
+            }
+            if(IsTreasureCaptured)
+            {
+                yield return StartCoroutine(GameManager.inst.CaptureTreasureRoutine());
             }
         }
     }
 
+    public void ClearGame()
+    {
+        for (int i = 0; i < polices.Length; i++)
+        {
+            Destroy(polices[i].tileObject.gameObject);
+            polices[i] = null;
+        }
+
+        if(treasures.Count != 0)
+        {
+            TreasureInfo[] remainings = new TreasureInfo[treasures.Count];
+            treasures.Values.CopyTo(remainings, 0);
+            for (int i = 0; i < treasures.Count; i++)
+            {
+                Destroy(remainings[i].tileObject);
+            }
+        }
+        treasures.Clear();
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            if(thieves[i] != null)
+            {
+                Destroy(thieves[i].tileObject.gameObject);
+                thieves[i] = null;
+            }
+        }
+    }
 
     #region Police
 
-    public void InitiatePolice()
+    public void InitiatePolice(PoliceInfo[] initialPolices)
     {
-        PoliceInfo[] initialPolices = Police.inst.InitialPolicePos();
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < polices.Length; i++)
         {
             Vector2 policePos = initialPolices[i].mapPos;
             if (policePos.x <= 0 || policePos.y <= 0 || policePos.x >= tileMap.size.x - 1 || policePos.y >= tileMap.size.y - 1 || map[(int)policePos.x, (int)policePos.y] == TileType.Wall)
             {
                 Debug.Log("Illegal police position at " + policePos);
+                GameManager.inst.RoundEnd();
             }
             else
             {
                 polices[i] = initialPolices[i];
-                polices[i].tileObject = Instantiate(policeTile, OnBoardPos(policePos), Quaternion.Euler(0, 0, initialPolices[i].angle));
+                polices[i].tileObject = Instantiate(policeTile, OnBoardPos(policePos), Quaternion.identity);
+
+                int spriteIndex = (int)initialPolices[i].angle / 90;
+                polices[i].tileObject.GetComponent<SpriteRenderer>().sprite = policeSprites[spriteIndex];
             }
         }
     }
 
-    public void InitiateTreasure()
-    {
-        Vector2[] initialTreasures = Police.inst.InitialTreasurePos();
-        
+    public void InitiateTreasure(Vector2[] initialTreasures)
+    {        
         for(int i = 0; i < 7; i++)
         {
             Vector2 treasurePos = initialTreasures[i];
             if (treasurePos.x == 0 || treasurePos.y == 0 || treasurePos.x == tileMap.size.x - 1 || treasurePos.y == tileMap.size.y - 1 || map[(int)treasurePos.x, (int)treasurePos.y] == TileType.Wall)
             {
                 Debug.Log("Illegal treasure position at " + treasurePos);
+                GameManager.inst.RoundEnd();
+                return;
             }
             else
             {
-                bool isPoliceNear = false;
                 for(int j = 0; j < polices.Length; j++)
                 {
                     Vector2 dist = polices[j].mapPos - treasurePos;
                     if(Mathf.Abs(dist.x) <= 1 && Mathf.Abs(dist.y) <= 1)
                     {
                         Debug.Log("Illegal treasure position at " + treasurePos);
-                        isPoliceNear = true;
-                        break;
+                        GameManager.inst.RoundEnd();
+                        return;
                     }
                 }
-                if(!isPoliceNear)
-                {
-                    TreasureInfo newTreasureInfo = new TreasureInfo();
-                    newTreasureInfo.mapPos = treasurePos;
-                    newTreasureInfo.value = i <= 2 ? 2 : (i <= 5 ? 3 : 5);
-                    newTreasureInfo.tileObject = Instantiate(i <= 2 ? treasure2Tile : (i <= 5 ? treasure3Tile : treasure5Tile), OnBoardPos(treasurePos), Quaternion.identity);
-                    treasures.Add(treasurePos, newTreasureInfo);
+                TreasureInfo newTreasureInfo = new TreasureInfo();
+                newTreasureInfo.mapPos = treasurePos;
+                newTreasureInfo.value = i <= 2 ? 2 : (i <= 5 ? 3 : 5);
+                newTreasureInfo.tileObject = Instantiate(i <= 2 ? treasure2Tile : (i <= 5 ? treasure3Tile : treasure5Tile), OnBoardPos(treasurePos), Quaternion.identity);
+                treasures.Add(treasurePos, newTreasureInfo);
 
-                    map[(int)treasurePos.x, (int)treasurePos.y] = TileType.Treasure;
-                }
-
+                map[(int)treasurePos.x, (int)treasurePos.y] = TileType.Treasure;
             }
         }
     }
@@ -325,10 +431,9 @@ public class MapManager : MonoBehaviour
 
     #region Thief
 
-    public void InitiateThief()
+    public void InitiateThief(ThiefInfo[] initialThieves)
     {
-        ThiefInfo[] initialThieves = Thief.inst.InitialThiefPos();
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < thieves.Length; i++)
         {
             Vector2 thiefPos = initialThieves[i].mapPos;
             if (thiefPos.x != 0 && thiefPos.y != 0 && thiefPos.x != tileMap.size.x - 1 && thiefPos.y != tileMap.size.y - 1)
@@ -341,6 +446,8 @@ public class MapManager : MonoBehaviour
                 thieves[i].tileObject = Instantiate(thiefTile, OnBoardPos(thiefPos), Quaternion.identity);
             }
         }
+
+        thiefCount = thieves.Length;
     }
 
     private SightInfo[,] GetThiefSight()
@@ -404,7 +511,7 @@ public class MoveInfo
     public float moveAngle;
 }
 
-public class TileInfo : ScriptableObject
+public class TileInfo
 {
     public Vector2 mapPos;
     public GameObject tileObject;
@@ -417,13 +524,17 @@ public class PoliceInfo : TileInfo
 
 public class ThiefInfo : TileInfo
 {
-    public int value;
+    public List<int> treasures;
+
+    public ThiefInfo()
+    {
+        treasures = new List<int>();
+    }
 }
 
 public class TreasureInfo : TileInfo
 {
     public int value;
-
 }
 /// <summary>
 /// 아군 유닛이 시야범위를 통해 특정 칸을 관찰한 결과
