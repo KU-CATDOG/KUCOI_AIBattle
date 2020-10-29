@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class Police : SingletonBehaviour<Police>
+public abstract class Police
 {
     public abstract Vector2[] InitialTreasurePos();
     public abstract PoliceInfo[] InitialPolicePos();
