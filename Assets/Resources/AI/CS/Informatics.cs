@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 
-namespace TestA
+namespace Informatics
 {
     public class ThiefAI : Thief
     {
@@ -25,10 +26,6 @@ namespace TestA
             pos[2].mapPos = new Vector2(0, 3);
             pos[3].mapPos = new Vector2(1, 15);
 
-            pos[0].value = 0;
-            pos[1].value = 0;
-            pos[2].value = 0;
-            pos[3].value = 0;
             //For test
 
             return pos;

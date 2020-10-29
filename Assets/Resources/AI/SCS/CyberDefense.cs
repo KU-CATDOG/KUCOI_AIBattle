@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TestB
+namespace CyberDefense
 {
     public class PoliceAI : Police
     {
@@ -98,15 +98,11 @@ namespace TestB
             pos[2].mapPos = new Vector2(3, 15);
             pos[3].mapPos = new Vector2(4, 15);
 
-            pos[0].value = 0;
-            pos[1].value = 0;
-            pos[2].value = 0;
-            pos[3].value = 0;
             //For test
 
             return pos;
         }
-
+        int i = 0;
         public override MoveInfo[] NextThiefPos()
         {
             MoveInfo[] pos = new MoveInfo[4];
@@ -117,12 +113,29 @@ namespace TestB
 
 
             //ForTest
-            pos[0].moveDir = MoveDir.Down;
-            pos[1].moveDir = MoveDir.Down;
-            pos[2].moveDir = MoveDir.Down;
-            pos[3].moveDir = MoveDir.Down;
+            if(i == 0)
+            {
+                pos[0].moveDir = MoveDir.Down;
+                pos[1].moveDir = MoveDir.Down;
+                pos[2].moveDir = MoveDir.Down;
+                pos[3].moveDir = MoveDir.Down;
+            }
+            else if (i == 1)
+            {
+                pos[0].moveDir = MoveDir.Up;
+                pos[1].moveDir = MoveDir.Up;
+                pos[2].moveDir = MoveDir.Up;
+                pos[3].moveDir = MoveDir.Up;
+            }
+            else
+            {
+                pos[0].moveDir = MoveDir.Down;
+                pos[1].moveDir = MoveDir.Down;
+                pos[2].moveDir = MoveDir.Down;
+                pos[3].moveDir = MoveDir.Down;
+            }
             //ForTest
-
+            i++;
 
 
             return pos;
