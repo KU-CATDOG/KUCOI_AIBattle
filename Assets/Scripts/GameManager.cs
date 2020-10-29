@@ -59,7 +59,6 @@ public class GameManager : SingletonBehaviour<GameManager>
         }
     }
 
-
     private IEnumerator InitiateAgents()
     {
         int policeErrorCount = 0, thiefErrorCount = 0;
@@ -104,15 +103,19 @@ public class GameManager : SingletonBehaviour<GameManager>
                 yield break;
             }
         }
+        winnerPanel.SetActive(true);
         if (policeErrorCount == 3)
         {
             Debug.Log("Police lose");
+            Debug.Log("Game end");
+            winnerText.text = isCSPolice ? scsTeamName : csTeamName;
         }
         else if (thiefErrorCount == 3)
         {
             Debug.Log("Thief lose");
+            Debug.Log("Game end");
+            winnerText.text = isCSPolice ? csTeamName : scsTeamName;
         }
-        RoundEnd();
     }
 
     private IEnumerator MoveAgents()
