@@ -117,10 +117,10 @@ namespace TestB
 
 
             //ForTest
-            pos[0].moveDir = MoveDir.Right;
-            pos[1].moveDir = MoveDir.Right;
-            pos[2].moveDir = MoveDir.Right;
-            pos[3].moveDir = MoveDir.Right;
+            pos[0].moveDir = MoveDir.Down;
+            pos[1].moveDir = MoveDir.Down;
+            pos[2].moveDir = MoveDir.Down;
+            pos[3].moveDir = MoveDir.Down;
             //ForTest
 
 
