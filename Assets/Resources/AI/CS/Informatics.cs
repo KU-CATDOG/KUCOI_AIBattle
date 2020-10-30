@@ -78,7 +78,6 @@ namespace Informatics
             pos[3].angle = 270;
             pos[4].angle = 0;
             pos[5].angle = 90;
-
             return pos;
         }
 
@@ -89,7 +88,7 @@ namespace Informatics
             pos[0] = new Vector2(1, 1);
             pos[1] = new Vector2(4, 5);
             pos[2] = new Vector2(1, 9);
-            pos[3] = new Vector2(4, 13);
+            pos[3] = new Vector2(4, 14);
             pos[4] = new Vector2(8, 1);
             pos[5] = new Vector2(8, 9);
             pos[6] = new Vector2(11, 5);

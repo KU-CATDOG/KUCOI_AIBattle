@@ -38,13 +38,13 @@ namespace CyberDefense
             Vector2[] pos = new Vector2[7];
 
             //For test
-            pos[0] = new Vector2(14, 14);
-            pos[1] = new Vector2(13, 14);
-            pos[2] = new Vector2(12, 14);
-            pos[3] = new Vector2(11, 14);
-            pos[4] = new Vector2(10, 14);
-            pos[5] = new Vector2(9, 14);
-            pos[6] = new Vector2(8, 14);
+            pos[0] = new Vector2(1, 1);
+            pos[1] = new Vector2(4, 5);
+            pos[2] = new Vector2(1, 9);
+            pos[3] = new Vector2(4, 13);
+            pos[4] = new Vector2(8, 1);
+            pos[5] = new Vector2(8, 9);
+            pos[6] = new Vector2(11, 5);
             //For test
             return pos;
         }
@@ -94,8 +94,8 @@ namespace CyberDefense
 
             //For test
             pos[0].mapPos = new Vector2(1, 15);
-            pos[1].mapPos = new Vector2(2, 15);
-            pos[2].mapPos = new Vector2(3, 15);
+            pos[1].mapPos = new Vector2(1, 15);
+            pos[2].mapPos = new Vector2(1, 15);
             pos[3].mapPos = new Vector2(4, 15);
             //For test
 
@@ -112,7 +112,7 @@ namespace CyberDefense
 
 
             //ForTest
-            if(i == 0)
+            if (i == 0)
             {
                 pos[0].moveDir = MoveDir.Down;
                 pos[1].moveDir = MoveDir.Down;

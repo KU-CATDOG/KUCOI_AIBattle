@@ -34,7 +34,7 @@ public class MapManager : MonoBehaviour
 
     public TileType GetTileCode(string tileName)
     {
-        return (TileType)System.Enum.Parse(typeof(TileType), tileName);
+        return (tileName != "WallBottom" && tileName != "WallTop") ? (TileType)System.Enum.Parse(typeof(TileType), tileName) : TileType.Wall;
     }
 
     private Vector2 OnBoardPos(Vector2 boardPos)
@@ -267,22 +267,19 @@ public class MapManager : MonoBehaviour
         }
 
 
+        if (isThiefCaught)
+        {
+            yield return StartCoroutine(GameManager.inst.CatchThiefRoutine());
+        }
+        if (IsTreasureCaptured)
+        {
+            yield return StartCoroutine(GameManager.inst.CaptureTreasureRoutine());
+        }
 
-        //If there is no thief, game over
+        //If there is no thief or treasure, game over
         if (thiefCount == 0 || treasures.Count == 0)
         {
             GameManager.inst.RoundEnd();
-        }
-        else
-        {
-            if(isThiefCaught)
-            {
-                yield return StartCoroutine(GameManager.inst.CatchThiefRoutine());
-            }
-            if(IsTreasureCaptured)
-            {
-                yield return StartCoroutine(GameManager.inst.CaptureTreasureRoutine());
-            }
         }
     }
 
@@ -316,7 +313,7 @@ public class MapManager : MonoBehaviour
         {
             for(int y = 0; y < mapSizeY; y++)
             {
-                if(map[x, y] == TileType.Empty)
+                if(map[x, y] == TileType.Empty || map[x, y] == TileType.Treasure)
                 {
                     tileMap.SetTile(new Vector3Int(x - mapSizeX / 2, y - mapSizeY / 2, 0), floorTile);
                 }
@@ -343,14 +340,42 @@ public class MapManager : MonoBehaviour
 
     public void InitiatePolice(PoliceInfo[] initialPolices)
     {
-        for (int i = 0; i < polices.Length; i++)
-        {
-            Vector2 policePos = initialPolices[i].mapPos;
-            polices[i] = initialPolices[i];
-            polices[i].tileObject = Instantiate(policeTile, OnBoardPos(policePos), Quaternion.identity);
+        Dictionary<Vector2, List<int>> dupPolicePos = new Dictionary<Vector2, List<int>>();
 
-            int spriteIndex = (int)initialPolices[i].angle / 90;
-            polices[i].tileObject.GetComponent<SpriteRenderer>().sprite = policeSprites[spriteIndex];
+        for (int i = 0; i < initialPolices.Length; i++)
+        {
+            if (!dupPolicePos.ContainsKey(initialPolices[i].mapPos))
+            {
+                List<int> indexList = new List<int>();
+                dupPolicePos.Add(initialPolices[i].mapPos, indexList);
+            }
+            dupPolicePos[initialPolices[i].mapPos].Add(i);
+        }
+
+        foreach (var child in dupPolicePos)
+        {
+            int dupPoliceCount = child.Value.Count;
+            for (int i = 0; i < dupPoliceCount; i++)
+            {
+                Vector2 policePos = initialPolices[child.Value[i]].mapPos;
+                polices[child.Value[i]] = initialPolices[child.Value[i]];
+                polices[child.Value[i]].tileObject = Instantiate(policeTile, OnBoardPos(polices[child.Value[i]].mapPos) + new Vector2(-0.5f + (float)(i + 1) / (dupPoliceCount + 1), 0), Quaternion.identity);
+
+                int spriteIndex = (int)polices[child.Value[i]].angle / 90;
+                polices[child.Value[i]].tileObject.GetComponent<SpriteRenderer>().sprite = policeSprites[spriteIndex];
+            }
+        }
+
+        SightInfo[,] currentSight = GetPoliceSight();
+        for (int x = 0; x < mapSizeX; x++)
+        {
+            for (int y = 0; y < mapSizeY; y++)
+            {
+                if (map[x, y] == TileType.Empty || map[x, y] == TileType.Treasure)
+                {
+                    tileMap.SetTile(new Vector3Int(x - mapSizeX / 2, y - mapSizeY / 2, 0), currentSight[x, y].isVisible ? sightTile : floorTile);
+                }
+            }
         }
     }
 
@@ -462,7 +487,7 @@ public class MapManager : MonoBehaviour
             int enemy = 0, treasure = 0;
             foreach(ThiefInfo thief in thieves)
             {
-                if((int)thief.mapPos.x == nextPos.x && (int)thief.mapPos.y == nextPos.y)
+                if (thief != null && (int)thief.mapPos.x == nextPos.x && (int)thief.mapPos.y == nextPos.y)
                 {
                     enemy++;
                     foreach (int value in thief.treasures)
@@ -484,7 +509,6 @@ public class MapManager : MonoBehaviour
         }
     }
 
-
     #endregion
 
     #region Thief
@@ -505,11 +529,30 @@ public class MapManager : MonoBehaviour
 
     public void InitiateThief(ThiefInfo[] initialThieves)
     {
-        for (int i = 0; i < thieves.Length; i++)
+        Dictionary<Vector2, List<int>> dupThiefPos = new Dictionary<Vector2, List<int>>();
+
+        for (int i = 0; i < initialThieves.Length; i++)
         {
-            Vector2 thiefPos = initialThieves[i].mapPos;
-            thieves[i] = initialThieves[i];
-            thieves[i].tileObject = Instantiate(thiefTile, OnBoardPos(thiefPos), Quaternion.identity);
+            if (initialThieves[i] != null)
+            {
+                if (!dupThiefPos.ContainsKey(initialThieves[i].mapPos))
+                {
+                    List<int> indexList = new List<int>();
+                    dupThiefPos.Add(initialThieves[i].mapPos, indexList);
+                }
+                dupThiefPos[initialThieves[i].mapPos].Add(i);
+            }
+        }
+
+        foreach (var child in dupThiefPos)
+        {
+            int dupThiefCount = child.Value.Count;
+            for (int i = 0; i < dupThiefCount; i++)
+            {
+                Vector2 thiefPos = initialThieves[child.Value[i]].mapPos;
+                thieves[child.Value[i]] = initialThieves[child.Value[i]];
+                thieves[child.Value[i]].tileObject = Instantiate(thiefTile, OnBoardPos(thieves[child.Value[i]].mapPos) + new Vector2(-0.5f + (float)(i + 1) / (dupThiefCount + 1), 0), Quaternion.identity);
+            }
         }
 
         thiefCount = thieves.Length;
@@ -527,29 +570,32 @@ public class MapManager : MonoBehaviour
         }
         for (int i = 0; i < thieves.Length; i++)
         {
-            Vector2Int thiefPos = new Vector2Int((int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y);
-
-            Vector2Int minCoord = new Vector2Int(Mathf.Clamp(thiefPos.x - 2, 0, mapSizeX - 1), Mathf.Clamp(thiefPos.y - 2, 0, mapSizeY - 1));
-            Vector2Int maxCoord = new Vector2Int(Mathf.Clamp(thiefPos.x + 2, 0, mapSizeX - 1), Mathf.Clamp(thiefPos.y + 2, 0, mapSizeY - 1));
-            for (int x = minCoord.x; x <= maxCoord.x; x++)
+            if(thieves[i] != null)
             {
-                for (int y = minCoord.y; y <= maxCoord.y; y++)
+                Vector2Int thiefPos = new Vector2Int((int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y);
+
+                Vector2Int minCoord = new Vector2Int(Mathf.Clamp(thiefPos.x - 2, 0, mapSizeX - 1), Mathf.Clamp(thiefPos.y - 2, 0, mapSizeY - 1));
+                Vector2Int maxCoord = new Vector2Int(Mathf.Clamp(thiefPos.x + 2, 0, mapSizeX - 1), Mathf.Clamp(thiefPos.y + 2, 0, mapSizeY - 1));
+                for (int x = minCoord.x; x <= maxCoord.x; x++)
                 {
-                    if(map[x, y] != TileType.Wall)
+                    for (int y = minCoord.y; y <= maxCoord.y; y++)
                     {
-                        int enemy = 0, treasure = 0;
-                        foreach (PoliceInfo police in polices)
+                        if (map[x, y] != TileType.Wall)
                         {
-                            if ((int)police.mapPos.x == x && (int)police.mapPos.y == y)
+                            int enemy = 0, treasure = 0;
+                            foreach (PoliceInfo police in polices)
                             {
-                                enemy++;
+                                if ((int)police.mapPos.x == x && (int)police.mapPos.y == y)
+                                {
+                                    enemy++;
+                                }
                             }
+                            if (treasures.TryGetValue(new Vector2(x, y), out TreasureInfo o))
+                            {
+                                treasure += o.value;
+                            }
+                            sightInfos[x, y] = new SightInfo(true, enemy, treasure);
                         }
-                        if (treasures.TryGetValue(new Vector2(x, y), out TreasureInfo o))
-                        {
-                            treasure += o.value;
-                        }
-                        sightInfos[x, y] = new SightInfo(true, enemy, treasure);
                     }
                 }
             }

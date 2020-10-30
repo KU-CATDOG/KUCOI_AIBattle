@@ -10,7 +10,7 @@ public class GameManager : SingletonBehaviour<GameManager>
 {
     public Text turnText;
     public Text introCSTeamNameText, introSCSTeamNameText;
-    public Text csTeamNameText, scsTeamNameText;
+    public Text csTeamNameText, scsTeamNameText, csScoreText, scsScoreText;
     public Text winnerText;
     public Text treasure2ScoreText, treasure3ScoreText, treasure5ScoreText, totalScoreText;
 
@@ -22,14 +22,14 @@ public class GameManager : SingletonBehaviour<GameManager>
     public Image thiefCatchAlert, treasureCaptureAlert;
     public Image thiefErrorAlert, policeErrorAlert, calculatingImage;
     public Image thiefIcon, policeIcon;
-    public GameObject roundEndPanel, winnerPanel, roundChangeIcon;
+    public GameObject roundEndPanel, winnerPanel, drawPanel, roundChangeButton, turnEndIcon, gameEndButton;
 
 
     private string csTeamName;
     private string scsTeamName;
 
     private bool isGameEnded = false;
-    private int maxTurn = 50;
+    private int maxTurn = 3;
     private int turnCount;
     private bool isMoveEnded = false;
 
@@ -60,10 +60,9 @@ public class GameManager : SingletonBehaviour<GameManager>
             collectedTreasures[treasures[i] == 2 ? 0 : treasures[i] == 3 ? 1 : 2]++;
             thiefScore[round % 2 == 0 ? 1 : 0] += treasures[i];
         }
+
+        (round % 2 == 0 ? scsScoreText : csScoreText).text = thiefScore[round % 2 == 0 ? 1 : 0].ToString();
     }
-
-
-
 
     private IEnumerator InitiateAgents()
     {
@@ -127,6 +126,7 @@ public class GameManager : SingletonBehaviour<GameManager>
 
     private IEnumerator MoveAgents()
     {
+        turnEndIcon.SetActive(false);
         isMoveEnded = false;
         nextPoliceMove = nextThiefMove = null;
 
@@ -187,9 +187,9 @@ public class GameManager : SingletonBehaviour<GameManager>
             nextThiefMove = pos;
         }
         turnCount--;
-        yield return StartCoroutine(mapManager.MoveAgents(nextPoliceMove, nextThiefMove));
 
         turnText.text = turnCount + "턴";
+        yield return StartCoroutine(mapManager.MoveAgents(nextPoliceMove, nextThiefMove));
         isMoveEnded = true;
     }
 
@@ -272,14 +272,17 @@ public class GameManager : SingletonBehaviour<GameManager>
 
     public void RestartGame()
     {
-        roundEndPanel.SetActive(false);
+        isGameStarted = false;
         mapManager.ClearGame();
         round++;
         isGameEnded = false;
         isMoveEnded = false;
 
+        initialPolices = null;
+        initialTreasures = null;
+        initialThieves = null;
+
         collectedTreasures = new int[3];
-        thiefScore = new int[2];
 
         StartGame();
     }
@@ -297,11 +300,32 @@ public class GameManager : SingletonBehaviour<GameManager>
         yield return new WaitForSeconds(5);
         if (round % 2 == 1)
         {
-            roundEndPanel.SetActive(false);
-            Debug.Log("Game end");
+            gameEndButton.SetActive(true);
+        }
+        else
+        {
+            roundChangeButton.SetActive(true);
+        }
+    }
+
+    public void RoundEnd()
+    {
+        StartCoroutine(RoundEndRoutine());
+    }
+
+    public void GameEnd()
+    {
+        Debug.Log("Game end");
+        Debug.Log(thiefScore[0]);
+        Debug.Log(thiefScore[1]);
+        if (thiefScore[0] == thiefScore[1])
+        {
+            Debug.Log("Draw");
+            drawPanel.SetActive(true);
+        }
+        else
+        {
             winnerPanel.SetActive(true);
-            Debug.Log(thiefScore[0]);
-            Debug.Log(thiefScore[1]);
             if (thiefScore[0] > thiefScore[1])
             {
                 Debug.Log(csTeamName + " win");
@@ -313,18 +337,6 @@ public class GameManager : SingletonBehaviour<GameManager>
                 winnerText.text = scsTeamName;
             }
         }
-        else
-        {
-            roundChangeIcon.SetActive(true);
-            yield return new WaitForSeconds(1.5f);
-            roundChangeIcon.SetActive(false);
-            RestartGame();
-        }
-    }
-
-    public void RoundEnd()
-    {
-        StartCoroutine(RoundEndRoutine());
     }
 
     private void Start()
@@ -346,7 +358,11 @@ public class GameManager : SingletonBehaviour<GameManager>
             }
             else
             {
-                StartCoroutine(MoveAgents());
+                turnEndIcon.SetActive(true);
+                if(Input.GetKeyDown(KeyCode.Space))
+                {
+                    StartCoroutine(MoveAgents());
+                }
             }
         }
     }
