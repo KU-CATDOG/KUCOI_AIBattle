@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.UIElements;
 
 public class MapManager : MonoBehaviour
 {
@@ -23,6 +24,10 @@ public class MapManager : MonoBehaviour
     private int thiefCount;
 
     private Dictionary<Vector2, TreasureInfo> treasures = new Dictionary<Vector2, TreasureInfo>();
+
+    private SightRay policeSightRule;
+
+    public TileType[,] baseMapGetter { get { return (TileType[,])map.Clone(); } }
 
     public TileType GetTileCode(string tileName)
     {
@@ -346,39 +351,86 @@ public class MapManager : MonoBehaviour
         }
     }
 
-    private void GetPoliceSight()
+    public SightInfo[,] GetPoliceSight()
     {
-        //SightType[,] sightInfos = new SightType[tileMap.size.x, tileMap.size.y];
-        //for (int x = 0; x < tileMap.size.x; x++)
-        //{
-        //    for (int y = 0; y < tileMap.size.y; y++)
-        //    {
-        //        sightInfos[x, y] = SightType.Invisible;
-        //    }
-        //}
+        if(policeSightRule == null)
+        {
+            policeSightRule =
+                new SightRay(0, 0, new SightRay[]
+                {
+                    new SightRay(1, 0, new SightRay[]
+                    {
+                        new SightRay(0, -1, new SightRay[]
+                        {
+                            new SightRay(1, 0)
+                        }),
+                        new SightRay(1, 0, new SightRay[]
+                        {
+                            new SightRay(1, 0, new SightRay[]
+                            {
+                                new SightRay(1, 0)
+                            })
+                        }),
+                        new SightRay(0, 1, new SightRay[]
+                        {
+                            new SightRay(1, 0)
+                        })
+                    })
+                });
+        }
+        SightInfo[,] sightInfos = new SightInfo[tileMap.size.x, tileMap.size.y];
+        for (int x = 0; x < tileMap.size.x; x++)
+        {
+            for (int y = 0; y < tileMap.size.y; y++)
+            {
+                sightInfos[x, y] = new SightInfo();
+            }
+        }
 
-        //for (int i = 0; i < 1; i++)
-        //{
-        //    Vector2 policePos = polices[i].mapPos;
-        //    int sin = (int)Mathf.Sin(polices[i].angle * Mathf.Deg2Rad);
-        //    int cos = (int)Mathf.Cos(polices[i].angle * Mathf.Deg2Rad);
+        for (int i = 0; i < 1; i++)
+        {
+            Vector2Int policePos = new Vector2Int((int)polices[i].mapPos.x, (int)polices[i].mapPos.y);
+            int sin = (int)Mathf.Sin(polices[i].angle * Mathf.Deg2Rad);
+            int cos = (int)Mathf.Cos(polices[i].angle * Mathf.Deg2Rad);
 
-        //    sightInfos[(int)policePos.x, (int)policePos.y] = MapToSight(map[(int)policePos.x, (int)policePos.y]);
+            PoliceSightDFS(sightInfos, policePos, sin, cos, policeSightRule);
+        }
 
-
-        //    for(int x = 0; x < 3; x++)
-        //    {
-        //        for(int y = -1; y < 2; y++)
-        //        {
-        //            int realX = cos * x - sin * y + cos + (int)policePos.x;
-        //            int realY = sin * x + cos * y + sin + (int)policePos.y;
-
-        //            Debug.Log(realX + "," + realY);
-
-        //        }
-        //    }
-        //}
+        return sightInfos;
     }
+    private void PoliceSightDFS(SightInfo[,] infos, Vector2Int pos, int sin, int cos, SightRay ray)
+    {
+        Vector2Int nextPos = new Vector2Int(cos * ray.ray.x - sin * ray.ray.y + pos.x, sin * ray.ray.x + cos * ray.ray.y + pos.y);
+
+        if (nextPos.x >= 0 && nextPos.x < tileMap.size.x &&
+            nextPos.y >= 0 && nextPos.y < tileMap.size.y &&
+            map[nextPos.x, nextPos.y] != TileType.Exit && map[nextPos.x, nextPos.y] != TileType.Wall)
+        {
+            int enemy = 0, treasure = 0;
+            foreach(ThiefInfo thief in thieves)
+            {
+                if((int)thief.mapPos.x == nextPos.x && (int)thief.mapPos.y == nextPos.y)
+                {
+                    enemy++;
+                    foreach (int value in thief.treasures)
+                    {
+                        treasure += value;
+                    }
+                }
+            }
+            if(treasures.TryGetValue(new Vector2(nextPos.x, nextPos.y), out TreasureInfo o))
+            {
+                treasure += o.value;
+            }
+            infos[nextPos.x, nextPos.y] = new SightInfo(true, enemy, treasure);
+
+            foreach (SightRay child in ray.next)
+            {
+                PoliceSightDFS(infos, nextPos, sin, cos, child);
+            }
+        }
+    }
+
 
     #endregion
 
@@ -403,12 +455,50 @@ public class MapManager : MonoBehaviour
         thiefCount = thieves.Length;
     }
 
-    private void GetThiefSight(int index)
+    public SightInfo[,] GetThiefSight()
     {
+        SightInfo[,] sightInfos = new SightInfo[tileMap.size.x, tileMap.size.y];
+        for (int x = 0; x < tileMap.size.x; x++)
+        {
+            for (int y = 0; y < tileMap.size.y; y++)
+            {
+                sightInfos[x, y] = new SightInfo();
+            }
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            Vector2Int thiefPos = new Vector2Int((int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y);
 
+            Vector2Int minCoord = new Vector2Int(Mathf.Clamp(thiefPos.x - 2, 0, tileMap.size.x - 1), Mathf.Clamp(thiefPos.y - 2, 0, tileMap.size.y - 1));
+            Vector2Int maxCoord = new Vector2Int(Mathf.Clamp(thiefPos.x + 2, 0, tileMap.size.x - 1), Mathf.Clamp(thiefPos.y + 2, 0, tileMap.size.y - 1));
+            for (int x = minCoord.x; x <= maxCoord.x; x++)
+            {
+                for (int y = minCoord.y; y <= maxCoord.y; y++)
+                {
+                    if(map[x, y] != TileType.Wall)
+                    {
+                        int enemy = 0, treasure = 0;
+                        foreach (PoliceInfo police in polices)
+                        {
+                            if ((int)police.mapPos.x == x && (int)police.mapPos.y == y)
+                            {
+                                enemy++;
+                            }
+                        }
+                        if (treasures.TryGetValue(new Vector2(x, y), out TreasureInfo o))
+                        {
+                            treasure += o.value;
+                        }
+                        sightInfos[x, y] = new SightInfo(true, enemy, treasure);
+                    }
+                }
+            }
+        }
+        return sightInfos;
     }
 
     #endregion
+
 
     private void Start()
     {
@@ -450,4 +540,59 @@ public class ThiefInfo : TileInfo
 public class TreasureInfo : TileInfo
 {
     public int value;
+}
+/// <summary>
+/// 아군 유닛이 시야범위를 통해 특정 칸을 관찰한 결과
+/// </summary>
+public class SightInfo
+{
+    /// <summary>
+    /// 아군 유닛이 해당 칸을 관찰했는가
+    /// </summary>
+    public bool isVisible { get { return _isVisible; } }
+
+    /// <summary>
+    /// 해당 칸에 있는 상대 유닛의 개수
+    /// </summary>
+    public int enemyAgentNum { get { return _enemyAgentNum; } }
+
+    /// <summary>
+    /// 해당 칸에 있는 보물의 양, 도둑이 소유중인 보물도 관측됨
+    /// </summary>
+    public int treasureNum { get { return _treasureNum; } }
+
+    private bool _isVisible;
+    private int _enemyAgentNum;
+    private int _treasureNum;
+
+    public SightInfo (bool visible, int agent, int treasure)
+    {
+        _isVisible = visible;
+        _enemyAgentNum = agent;
+        _treasureNum = treasure;
+    }
+    public SightInfo()
+    {
+        _isVisible = false;
+        _enemyAgentNum = 0;
+        _treasureNum = 0;
+    }
+}
+
+
+public class SightRay
+{
+    public Vector2Int ray;
+    public List<SightRay> next;
+
+    public SightRay(int x, int y)
+    {
+        ray = new Vector2Int(x, y);
+        next = new List<SightRay>();
+    }
+    public SightRay(int x, int y, SightRay[] list)
+    {
+        ray = new Vector2Int(x, y);
+        next = new List<SightRay>(list);
+    }
 }
