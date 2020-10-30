@@ -29,7 +29,7 @@ public class GameManager : SingletonBehaviour<GameManager>
     private string scsTeamName;
 
     private bool isGameEnded = false;
-    private int maxTurn = 3;
+    private int maxTurn = 50;
     private int turnCount;
     private bool isMoveEnded = false;
 
