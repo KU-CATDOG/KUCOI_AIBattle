@@ -114,12 +114,12 @@ namespace Informatics
             pos[4].moveDir = MoveDir.Up;
             pos[5].moveDir = MoveDir.Up;
 
-            pos[0].moveAngle = 270;
-            pos[1].moveAngle = 180;
-            pos[2].moveAngle = 90;
-            pos[3].moveAngle = 0;
-            pos[4].moveAngle = 270;
-            pos[5].moveAngle = 180;
+            pos[0].moveAngle = MoveAngle.Up;
+            pos[1].moveAngle = MoveAngle.Up;
+            pos[2].moveAngle = MoveAngle.Up;
+            pos[3].moveAngle = MoveAngle.Up;
+            pos[4].moveAngle = MoveAngle.Up;
+            pos[5].moveAngle = MoveAngle.Up;
             //ForTest
 
 

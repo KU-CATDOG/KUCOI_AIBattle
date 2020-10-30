@@ -29,7 +29,7 @@ public class GameManager : SingletonBehaviour<GameManager>
     private string scsTeamName;
 
     private bool isGameEnded = false;
-    private int maxTurn = 3;
+    private int maxTurn = 50;
     private int turnCount;
     private bool isMoveEnded = false;
 
@@ -160,12 +160,12 @@ public class GameManager : SingletonBehaviour<GameManager>
             pos[4].moveDir = MoveDir.Neutral;
             pos[5].moveDir = MoveDir.Neutral;
 
-            pos[0].moveAngle = -1;
-            pos[1].moveAngle = -1;
-            pos[2].moveAngle = -1;
-            pos[3].moveAngle = -1;
-            pos[4].moveAngle = -1;
-            pos[5].moveAngle = -1;
+            pos[0].moveAngle = MoveAngle.Null;
+            pos[1].moveAngle = MoveAngle.Null;
+            pos[2].moveAngle = MoveAngle.Null;
+            pos[3].moveAngle = MoveAngle.Null;
+            pos[4].moveAngle = MoveAngle.Null;
+            pos[5].moveAngle = MoveAngle.Null;
 
             nextPoliceMove = pos;
         }

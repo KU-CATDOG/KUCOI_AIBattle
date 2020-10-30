@@ -116,11 +116,11 @@ public class MapManager : MonoBehaviour
         {
             Vector2 afterMovePos = polices[i].mapPos + MoveDirToVector2(policeMoves[i].moveDir);
 
-            if(policeMoves[i].moveAngle != -1 && 
+            if(policeMoves[i].moveAngle != MoveAngle.Null && 
                 map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Exit && !IsTreasureNear(afterMovePos))
             {
                 polices[i].mapPos = afterMovePos;
-                polices[i].angle = policeMoves[i].moveAngle;
+                polices[i].angle = (int)policeMoves[i].moveAngle;
             }
             else
             {
@@ -563,7 +563,7 @@ public class MapManager : MonoBehaviour
 public class MoveInfo
 {
     public MoveDir moveDir;
-    public float moveAngle;
+    public MoveAngle moveAngle;
 }
 
 public class TileInfo
