@@ -22,7 +22,7 @@ public class GameManager : SingletonBehaviour<GameManager>
     public Image thiefCatchAlert, treasureCaptureAlert;
     public Image thiefErrorAlert, policeErrorAlert, calculatingImage;
     public Image thiefIcon, policeIcon;
-    public GameObject roundEndPanel, winnerPanel;
+    public GameObject roundEndPanel, winnerPanel, roundChangeIcon;
 
 
     private string csTeamName;
@@ -295,6 +295,9 @@ public class GameManager : SingletonBehaviour<GameManager>
         }
         else
         {
+            roundChangeIcon.SetActive(true);
+            yield return new WaitForSeconds(1.5f);
+            roundChangeIcon.SetActive(false);
             RestartGame();
         }
     }

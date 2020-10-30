@@ -104,6 +104,7 @@ namespace Informatics
                 pos[i] = new MoveInfo();
             }
 
+            
 
             //ForTest
             pos[0].moveDir = MoveDir.Up;
