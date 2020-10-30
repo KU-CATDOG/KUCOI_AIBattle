@@ -6274,6 +6274,8 @@ MonoBehaviour:
     type: 3}
   treasure5Tile: {fileID: 5135569931564674791, guid: 90f16b188767d2947b7ea177eec968a4,
     type: 3}
+  sightTile: {fileID: 11400000, guid: 55789f750da29f04b88601a10402e7d6, type: 2}
+  floorTile: {fileID: 11400000, guid: 978e88d217146974095d34280d4ec63d, type: 2}
   policeSprites:
   - {fileID: 615265928156974625, guid: 6699daaab12eba147870ab1dd9a1ae3c, type: 3}
   - {fileID: -6707344157622774403, guid: 6699daaab12eba147870ab1dd9a1ae3c, type: 3}

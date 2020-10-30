@@ -1,4 +1,4 @@
-﻿public enum TileType { Empty, Wall, Exit, Treasure }
+﻿public enum TileType { Empty, Wall, Exit, Treasure, Sight }
 
 public enum SightType { Empty, Invisible, Treasure, Thief }
 

@@ -62,6 +62,9 @@ public class GameManager : SingletonBehaviour<GameManager>
         }
     }
 
+
+
+
     private IEnumerator InitiateAgents()
     {
         int policeErrorCount = 0, thiefErrorCount = 0;
@@ -206,13 +209,24 @@ public class GameManager : SingletonBehaviour<GameManager>
 
     public void InitiatePolicePos()
     {
-        initialPolices = policeAI.InitialPolicePos((TileType[,])baseMap.Clone());
-        initialTreasures = policeAI.InitialTreasurePos((TileType[,])baseMap.Clone());
+        PoliceInfo[] tempInitialPolices = policeAI.InitialPolicePos((TileType[,])baseMap.Clone());
+        Vector2[] tempInitialTreasures = policeAI.InitialTreasurePos((TileType[,])baseMap.Clone());
+
+        if(mapManager.CheckInitialPolicePossible(tempInitialPolices) && mapManager.CheckInitialTreasurePossible(tempInitialTreasures, tempInitialPolices))
+        {
+            initialPolices = tempInitialPolices;
+            initialTreasures = tempInitialTreasures;
+        }
     }
 
     public void InitiateThiefPos()
     {
-        initialThieves = thiefAI.InitialThiefPos((TileType[,])baseMap.Clone());
+        ThiefInfo[] tempInitialThieves = thiefAI.InitialThiefPos((TileType[,])baseMap.Clone());
+
+        if(mapManager.CheckInitialThiefPossible(tempInitialThieves))
+        {
+            initialThieves = tempInitialThieves;
+        }
     }
 
     private void MovePolice()

@@ -6,7 +6,7 @@ namespace CyberDefense
 {
     public class PoliceAI : Police
     {
-        public override PoliceInfo[] InitialPolicePos()
+        public override PoliceInfo[] InitialPolicePos(TileType[,] baseMap)
         {
             PoliceInfo[] pos = new PoliceInfo[6];
             for (int i = 0; i < 6; i++)
@@ -33,7 +33,7 @@ namespace CyberDefense
             return pos;
         }
 
-        public override Vector2[] InitialTreasurePos()
+        public override Vector2[] InitialTreasurePos(TileType[,] baseMap)
         {
             Vector2[] pos = new Vector2[7];
 
@@ -49,7 +49,7 @@ namespace CyberDefense
             return pos;
         }
 
-        public override MoveInfo[] NextPolicePos()
+        public override MoveInfo[] NextPolicePos(SightInfo[,] sight)
         {
             MoveInfo[] pos = new MoveInfo[6];
             for (int i = 0; i < 6; i++)
@@ -81,7 +81,7 @@ namespace CyberDefense
     }
     public class ThiefAI : Thief
     {
-        public override ThiefInfo[] InitialThiefPos()
+        public override ThiefInfo[] InitialThiefPos(TileType[,] baseMap)
         {
             //도둑의 초기 위치를 설정하여 반환
             //반환되는 배열의 크기는 4이어야 하며, 배열의 크기가 4보다 큰 경우 첫 4번째 값까지만 사용됨
@@ -97,13 +97,12 @@ namespace CyberDefense
             pos[1].mapPos = new Vector2(2, 15);
             pos[2].mapPos = new Vector2(3, 15);
             pos[3].mapPos = new Vector2(4, 15);
-
             //For test
 
             return pos;
         }
         int i = 0;
-        public override MoveInfo[] NextThiefPos()
+        public override MoveInfo[] NextThiefPos(SightInfo[,] sight)
         {
             MoveInfo[] pos = new MoveInfo[4];
             for (int i = 0; i < 4; i++)

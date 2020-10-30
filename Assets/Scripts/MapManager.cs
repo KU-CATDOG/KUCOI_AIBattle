@@ -3,15 +3,18 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using UnityEngine.UIElements;
 
 public class MapManager : MonoBehaviour
 {
     private TileType[,] map;
     [SerializeField]
     private Tilemap tileMap;
+    private int mapSizeX, mapSizeY;
     [SerializeField]
     private GameObject policeTile, thiefTile, treasure2Tile, treasure3Tile, treasure5Tile;
+
+    [SerializeField]
+    private Tile sightTile, floorTile;
 
     [SerializeField]
     private Sprite[] policeSprites;
@@ -36,7 +39,7 @@ public class MapManager : MonoBehaviour
 
     private Vector2 OnBoardPos(Vector2 boardPos)
     {
-        return boardPos - new Vector2(tileMap.size.x, tileMap.size.y) / 2 + new Vector2(0.5f, 0.5f);
+        return boardPos - new Vector2(mapSizeX, mapSizeY) / 2 + new Vector2(0.5f, 0.5f);
     }
 
     private SightType MapToSight(TileType mapInfo)
@@ -71,11 +74,14 @@ public class MapManager : MonoBehaviour
     public void InitiateMap()
     {
         map = new TileType[tileMap.size.x, tileMap.size.y];
-        for (int x = 0; x < tileMap.size.x; x++)
+
+        mapSizeX = tileMap.size.x;
+        mapSizeY = tileMap.size.y;
+        for (int x = 0; x < mapSizeX; x++)
         {
-            for (int y = 0; y < tileMap.size.y; y++)
+            for (int y = 0; y < mapSizeY; y++)
             {
-                map[x, y] = GetTileCode(tileMap.GetTile(new Vector3Int(x - tileMap.size.x / 2, y - tileMap.size.y / 2, 0)).name);
+                map[x, y] = GetTileCode(tileMap.GetTile(new Vector3Int(x - mapSizeX / 2, y - mapSizeY / 2, 0)).name);
             }
         }
     }
@@ -98,6 +104,7 @@ public class MapManager : MonoBehaviour
             map[(int)mapPos.x - 1, (int)mapPos.y + 1] == TileType.Treasure || map[(int)mapPos.x - 1, (int)mapPos.y] == TileType.Treasure || map[(int)mapPos.x - 1, (int)mapPos.y - 1] == TileType.Treasure ||
             map[(int)mapPos.x, (int)mapPos.y - 1] == TileType.Treasure || map[(int)mapPos.x + 1, (int)mapPos.y - 1] == TileType.Treasure;
     }
+
 
     public IEnumerator MoveAgents(MoveInfo[] policeMoves, MoveInfo[] thiefMoves)
     {
@@ -126,7 +133,7 @@ public class MapManager : MonoBehaviour
             {
                 Vector2 afterMovePos = thieves[i].mapPos + MoveDirToVector2(thiefMoves[i].moveDir);
 
-                if(afterMovePos.x >= 0 && afterMovePos.x <= tileMap.size.x - 1 && afterMovePos.y >= 0 && afterMovePos.y <= tileMap.size.y - 1 && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall)
+                if(afterMovePos.x >= 0 && afterMovePos.x <= mapSizeX - 1 && afterMovePos.y >= 0 && afterMovePos.y <= mapSizeY - 1 && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall)
                 {
                     thieves[i].mapPos = afterMovePos;
                 }
@@ -194,6 +201,18 @@ public class MapManager : MonoBehaviour
         }
 
 
+        SightInfo[,] currentSight = GetPoliceSight();
+        for (int x = 0; x < mapSizeX; x++)
+        {
+            for (int y = 0; y < mapSizeY; y++)
+            {
+                if (map[x, y] == TileType.Empty || map[x, y] == TileType.Treasure)
+                {
+                    tileMap.SetTile(new Vector3Int(x - mapSizeX / 2, y - mapSizeY / 2, 0), currentSight[x, y].isVisible ? sightTile : floorTile);
+                }
+            }
+        }
+
 
         yield return new WaitForSeconds(1);
 
@@ -248,6 +267,7 @@ public class MapManager : MonoBehaviour
         }
 
 
+
         //If there is no thief, game over
         if (thiefCount == 0 || treasures.Count == 0)
         {
@@ -292,29 +312,83 @@ public class MapManager : MonoBehaviour
                 thieves[i] = null;
             }
         }
+        for(int x = 0; x < mapSizeX; x++)
+        {
+            for(int y = 0; y < mapSizeY; y++)
+            {
+                if(map[x, y] == TileType.Empty)
+                {
+                    tileMap.SetTile(new Vector3Int(x - mapSizeX / 2, y - mapSizeY / 2, 0), floorTile);
+                }
+            }
+        }
     }
 
     #region Police
+
+    public bool CheckInitialPolicePossible(PoliceInfo[] initialPolices)
+    {
+        for (int i = 0; i < polices.Length; i++)
+        {
+            Vector2 policePos = initialPolices[i].mapPos;
+            if (policePos.x <= 0 || policePos.y <= 0 || policePos.x >= mapSizeX - 1 || policePos.y >= mapSizeY - 1 || map[(int)policePos.x, (int)policePos.y] == TileType.Wall)
+            {
+                Debug.Log("Illegal police position at " + policePos);
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public void InitiatePolice(PoliceInfo[] initialPolices)
     {
         for (int i = 0; i < polices.Length; i++)
         {
             Vector2 policePos = initialPolices[i].mapPos;
-            if (policePos.x <= 0 || policePos.y <= 0 || policePos.x >= tileMap.size.x - 1 || policePos.y >= tileMap.size.y - 1 || map[(int)policePos.x, (int)policePos.y] == TileType.Wall)
+            polices[i] = initialPolices[i];
+            polices[i].tileObject = Instantiate(policeTile, OnBoardPos(policePos), Quaternion.identity);
+
+            int spriteIndex = (int)initialPolices[i].angle / 90;
+            polices[i].tileObject.GetComponent<SpriteRenderer>().sprite = policeSprites[spriteIndex];
+        }
+    }
+
+
+    public bool CheckInitialTreasurePossible(Vector2[] initialTreasures, PoliceInfo[] initialPolices)
+    {
+        for (int i = 0; i < 7; i++)
+        {
+            Vector2 treasurePos = initialTreasures[i];
+            if (treasurePos.x == 0 || treasurePos.y == 0 || treasurePos.x == mapSizeX - 1 || treasurePos.y == mapSizeY - 1 || map[(int)treasurePos.x, (int)treasurePos.y] == TileType.Wall)
             {
-                Debug.Log("Illegal police position at " + policePos);
-                GameManager.inst.RoundEnd();
+                Debug.Log("Illegal treasure position at " + treasurePos);
+                return false;
             }
             else
             {
-                polices[i] = initialPolices[i];
-                polices[i].tileObject = Instantiate(policeTile, OnBoardPos(policePos), Quaternion.identity);
+                for (int j = 0; j < polices.Length; j++)
+                {
+                    Vector2 dist = initialPolices[j].mapPos - treasurePos;
+                    if (Mathf.Abs(dist.x) <= 1 && Mathf.Abs(dist.y) <= 1)
+                    {
+                        Debug.Log("Illegal treasure position at " + treasurePos);
+                        return false;
+                    }
+                }
 
-                int spriteIndex = (int)initialPolices[i].angle / 90;
-                polices[i].tileObject.GetComponent<SpriteRenderer>().sprite = policeSprites[spriteIndex];
+                for (int j = 0; j < i; j++)
+                {
+                    Vector2 dist = treasurePos - initialTreasures[j];
+                    if (Mathf.Abs(dist.x) + Mathf.Abs(dist.y) < 7)
+                    {
+                        Debug.Log("Illegal treasure position at " + treasurePos);
+                        return false;
+                    }
+                }
             }
         }
+        return true;
     }
 
     public void InitiateTreasure(Vector2[] initialTreasures)
@@ -322,32 +396,14 @@ public class MapManager : MonoBehaviour
         for(int i = 0; i < 7; i++)
         {
             Vector2 treasurePos = initialTreasures[i];
-            if (treasurePos.x == 0 || treasurePos.y == 0 || treasurePos.x == tileMap.size.x - 1 || treasurePos.y == tileMap.size.y - 1 || map[(int)treasurePos.x, (int)treasurePos.y] == TileType.Wall)
-            {
-                Debug.Log("Illegal treasure position at " + treasurePos);
-                GameManager.inst.RoundEnd();
-                return;
-            }
-            else
-            {
-                for(int j = 0; j < polices.Length; j++)
-                {
-                    Vector2 dist = polices[j].mapPos - treasurePos;
-                    if(Mathf.Abs(dist.x) <= 1 && Mathf.Abs(dist.y) <= 1)
-                    {
-                        Debug.Log("Illegal treasure position at " + treasurePos);
-                        GameManager.inst.RoundEnd();
-                        return;
-                    }
-                }
-                TreasureInfo newTreasureInfo = new TreasureInfo();
-                newTreasureInfo.mapPos = treasurePos;
-                newTreasureInfo.value = i <= 2 ? 2 : (i <= 5 ? 3 : 5);
-                newTreasureInfo.tileObject = Instantiate(i <= 2 ? treasure2Tile : (i <= 5 ? treasure3Tile : treasure5Tile), OnBoardPos(treasurePos), Quaternion.identity);
-                treasures.Add(treasurePos, newTreasureInfo);
 
-                map[(int)treasurePos.x, (int)treasurePos.y] = TileType.Treasure;
-            }
+            TreasureInfo newTreasureInfo = new TreasureInfo();
+            newTreasureInfo.mapPos = treasurePos;
+            newTreasureInfo.value = i <= 2 ? 2 : (i <= 5 ? 3 : 5);
+            newTreasureInfo.tileObject = Instantiate(i <= 2 ? treasure2Tile : (i <= 5 ? treasure3Tile : treasure5Tile), OnBoardPos(treasurePos), Quaternion.identity);
+            treasures.Add(treasurePos, newTreasureInfo);
+
+            map[(int)treasurePos.x, (int)treasurePos.y] = TileType.Treasure;
         }
     }
 
@@ -366,10 +422,7 @@ public class MapManager : MonoBehaviour
                         }),
                         new SightRay(1, 0, new SightRay[]
                         {
-                            new SightRay(1, 0, new SightRay[]
-                            {
-                                new SightRay(1, 0)
-                            })
+                            new SightRay(1, 0)
                         }),
                         new SightRay(0, 1, new SightRay[]
                         {
@@ -378,16 +431,16 @@ public class MapManager : MonoBehaviour
                     })
                 });
         }
-        SightInfo[,] sightInfos = new SightInfo[tileMap.size.x, tileMap.size.y];
-        for (int x = 0; x < tileMap.size.x; x++)
+        SightInfo[,] sightInfos = new SightInfo[mapSizeX, mapSizeY];
+        for (int x = 0; x < mapSizeX; x++)
         {
-            for (int y = 0; y < tileMap.size.y; y++)
+            for (int y = 0; y < mapSizeY; y++)
             {
                 sightInfos[x, y] = new SightInfo();
             }
         }
 
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < polices.Length; i++)
         {
             Vector2Int policePos = new Vector2Int((int)polices[i].mapPos.x, (int)polices[i].mapPos.y);
             int sin = (int)Mathf.Sin(polices[i].angle * Mathf.Deg2Rad);
@@ -402,8 +455,8 @@ public class MapManager : MonoBehaviour
     {
         Vector2Int nextPos = new Vector2Int(cos * ray.ray.x - sin * ray.ray.y + pos.x, sin * ray.ray.x + cos * ray.ray.y + pos.y);
 
-        if (nextPos.x >= 0 && nextPos.x < tileMap.size.x &&
-            nextPos.y >= 0 && nextPos.y < tileMap.size.y &&
+        if (nextPos.x >= 0 && nextPos.x < mapSizeX &&
+            nextPos.y >= 0 && nextPos.y < mapSizeY &&
             map[nextPos.x, nextPos.y] != TileType.Exit && map[nextPos.x, nextPos.y] != TileType.Wall)
         {
             int enemy = 0, treasure = 0;
@@ -436,20 +489,27 @@ public class MapManager : MonoBehaviour
 
     #region Thief
 
+    public bool CheckInitialThiefPossible(ThiefInfo[] initialThieves)
+    {
+        for (int i = 0; i < thieves.Length; i++)
+        {
+            Vector2 thiefPos = initialThieves[i].mapPos;
+            if (thiefPos.x != 0 && thiefPos.y != 0 && thiefPos.x != mapSizeX - 1 && thiefPos.y != mapSizeY - 1)
+            {
+                Debug.Log("Illegal thief position at " + thiefPos);
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void InitiateThief(ThiefInfo[] initialThieves)
     {
         for (int i = 0; i < thieves.Length; i++)
         {
             Vector2 thiefPos = initialThieves[i].mapPos;
-            if (thiefPos.x != 0 && thiefPos.y != 0 && thiefPos.x != tileMap.size.x - 1 && thiefPos.y != tileMap.size.y - 1)
-            {
-                Debug.Log("Illegal thief position at " + thiefPos);
-            }
-            else
-            {
-                thieves[i] = initialThieves[i];
-                thieves[i].tileObject = Instantiate(thiefTile, OnBoardPos(thiefPos), Quaternion.identity);
-            }
+            thieves[i] = initialThieves[i];
+            thieves[i].tileObject = Instantiate(thiefTile, OnBoardPos(thiefPos), Quaternion.identity);
         }
 
         thiefCount = thieves.Length;
@@ -457,20 +517,20 @@ public class MapManager : MonoBehaviour
 
     public SightInfo[,] GetThiefSight()
     {
-        SightInfo[,] sightInfos = new SightInfo[tileMap.size.x, tileMap.size.y];
-        for (int x = 0; x < tileMap.size.x; x++)
+        SightInfo[,] sightInfos = new SightInfo[mapSizeX, mapSizeY];
+        for (int x = 0; x < mapSizeX; x++)
         {
-            for (int y = 0; y < tileMap.size.y; y++)
+            for (int y = 0; y < mapSizeY; y++)
             {
                 sightInfos[x, y] = new SightInfo();
             }
         }
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < thieves.Length; i++)
         {
             Vector2Int thiefPos = new Vector2Int((int)thieves[i].mapPos.x, (int)thieves[i].mapPos.y);
 
-            Vector2Int minCoord = new Vector2Int(Mathf.Clamp(thiefPos.x - 2, 0, tileMap.size.x - 1), Mathf.Clamp(thiefPos.y - 2, 0, tileMap.size.y - 1));
-            Vector2Int maxCoord = new Vector2Int(Mathf.Clamp(thiefPos.x + 2, 0, tileMap.size.x - 1), Mathf.Clamp(thiefPos.y + 2, 0, tileMap.size.y - 1));
+            Vector2Int minCoord = new Vector2Int(Mathf.Clamp(thiefPos.x - 2, 0, mapSizeX - 1), Mathf.Clamp(thiefPos.y - 2, 0, mapSizeY - 1));
+            Vector2Int maxCoord = new Vector2Int(Mathf.Clamp(thiefPos.x + 2, 0, mapSizeX - 1), Mathf.Clamp(thiefPos.y + 2, 0, mapSizeY - 1));
             for (int x = minCoord.x; x <= maxCoord.x; x++)
             {
                 for (int y = minCoord.y; y <= maxCoord.y; y++)
@@ -498,16 +558,6 @@ public class MapManager : MonoBehaviour
     }
 
     #endregion
-
-
-    private void Start()
-    {
-    }
-
-    private void Update()
-    {
-
-    }
 }
 
 public class MoveInfo

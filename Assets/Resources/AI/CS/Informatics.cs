@@ -8,7 +8,7 @@ namespace Informatics
 {
     public class ThiefAI : Thief
     {
-        public override ThiefInfo[] InitialThiefPos()
+        public override ThiefInfo[] InitialThiefPos(TileType[,] baseMap)
         {
             //도둑의 초기 위치를 설정하여 반환
             //반환되는 배열의 크기는 4이어야 하며, 배열의 크기가 4보다 큰 경우 첫 4번째 값까지만 사용됨
@@ -31,7 +31,7 @@ namespace Informatics
             return pos;
         }
 
-        public override MoveInfo[] NextThiefPos()
+        public override MoveInfo[] NextThiefPos(SightInfo[,] sight)
         {
             MoveInfo[] pos = new MoveInfo[4];
             for (int i = 0; i < 4; i++)
@@ -57,7 +57,7 @@ namespace Informatics
 
     public class PoliceAI : Police
     {
-        public override PoliceInfo[] InitialPolicePos()
+        public override PoliceInfo[] InitialPolicePos(TileType[,] baseMap)
         {
             PoliceInfo[] pos = new PoliceInfo[6];
             for (int i = 0; i < 6; i++)
@@ -65,14 +65,14 @@ namespace Informatics
                 pos[i] = new PoliceInfo();
             }
 
-            pos[0].mapPos = new Vector2(3, 1);
-            pos[1].mapPos = new Vector2(3, 2);
-            pos[2].mapPos = new Vector2(3, 3);
-            pos[3].mapPos = new Vector2(3, 4);
-            pos[4].mapPos = new Vector2(3, 5);
-            pos[5].mapPos = new Vector2(3, 6);
+            pos[0].mapPos = new Vector2(1, 3);
+            pos[1].mapPos = new Vector2(1, 3);
+            pos[2].mapPos = new Vector2(1, 3);
+            pos[3].mapPos = new Vector2(1, 3);
+            pos[4].mapPos = new Vector2(1, 3);
+            pos[5].mapPos = new Vector2(1, 3);
 
-            pos[0].angle = 0;
+            pos[0].angle = 180;
             pos[1].angle = 90;
             pos[2].angle = 180;
             pos[3].angle = 270;
@@ -82,21 +82,21 @@ namespace Informatics
             return pos;
         }
 
-        public override Vector2[] InitialTreasurePos()
+        public override Vector2[] InitialTreasurePos(TileType[,] baseMap)
         {
             Vector2[] pos = new Vector2[7];
 
-            pos[0] = new Vector2(1, 14);
-            pos[1] = new Vector2(2, 14);
-            pos[2] = new Vector2(3, 14);
-            pos[3] = new Vector2(4, 14);
-            pos[4] = new Vector2(5, 14);
-            pos[5] = new Vector2(6, 14);
-            pos[6] = new Vector2(7, 14);
+            pos[0] = new Vector2(1, 1);
+            pos[1] = new Vector2(4, 5);
+            pos[2] = new Vector2(1, 9);
+            pos[3] = new Vector2(4, 13);
+            pos[4] = new Vector2(8, 1);
+            pos[5] = new Vector2(8, 9);
+            pos[6] = new Vector2(11, 5);
             return pos;
         }
 
-        public override MoveInfo[] NextPolicePos()
+        public override MoveInfo[] NextPolicePos(SightInfo[,] sight)
         {
             MoveInfo[] pos = new MoveInfo[6];
             for (int i = 0; i < 6; i++)
