@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -21,6 +22,7 @@ public class MapManager : MonoBehaviour
 
     private ThiefInfo[] thieves = new ThiefInfo[4];
     private PoliceInfo[] polices = new PoliceInfo[6];
+
     [SerializeField]
     private GameObject[] caughtThieves = new GameObject[4];
 
@@ -31,6 +33,8 @@ public class MapManager : MonoBehaviour
     private SightRay policeSightRule;
 
     public TileType[,] baseMapGetter { get { return (TileType[,])map.Clone(); } }
+    public ThiefInfo[] thiefInfoGetter { get { return (ThiefInfo[])thieves.Clone(); } }
+    public PoliceInfo[] policeInfoGetter { get { return (PoliceInfo[])polices.Clone(); } }
 
     public TileType GetTileCode(string tileName)
     {
@@ -120,7 +124,7 @@ public class MapManager : MonoBehaviour
                 map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Wall && map[(int)afterMovePos.x, (int)afterMovePos.y] != TileType.Exit && !IsTreasureNear(afterMovePos))
             {
                 polices[i].mapPos = afterMovePos;
-                polices[i].angle = (int)policeMoves[i].moveAngle;
+                polices[i].angle = policeMoves[i].moveAngle;
             }
             else
             {
@@ -468,8 +472,8 @@ public class MapManager : MonoBehaviour
         for (int i = 0; i < polices.Length; i++)
         {
             Vector2Int policePos = new Vector2Int((int)polices[i].mapPos.x, (int)polices[i].mapPos.y);
-            int sin = (int)Mathf.Sin(polices[i].angle * Mathf.Deg2Rad);
-            int cos = (int)Mathf.Cos(polices[i].angle * Mathf.Deg2Rad);
+            int sin = (int)Mathf.Sin((int)polices[i].angle * Mathf.Deg2Rad);
+            int cos = (int)Mathf.Cos((int)polices[i].angle * Mathf.Deg2Rad);
 
             PoliceSightDFS(sightInfos, policePos, sin, cos, policeSightRule);
         }
@@ -620,7 +624,7 @@ public class TileInfo
 
 public class PoliceInfo : TileInfo
 {
-    public float angle;
+    public MoveAngle angle;
 }
 
 public class ThiefInfo : TileInfo

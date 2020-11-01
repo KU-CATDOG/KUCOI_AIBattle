@@ -231,12 +231,12 @@ public class GameManager : SingletonBehaviour<GameManager>
 
     private void MovePolice()
     {
-        nextPoliceMove = policeAI.NextPolicePos(precalcPoliceSight);
+        nextPoliceMove = policeAI.NextPolicePos(precalcPoliceSight, mapManager.policeInfoGetter);
     }
 
     private void MoveThief()
     {
-        nextThiefMove = thiefAI.NextThiefPos(precalcThiefSight);
+        nextThiefMove = thiefAI.NextThiefPos(precalcThiefSight, mapManager.thiefInfoGetter);
     }
 
     public void StartGame()
